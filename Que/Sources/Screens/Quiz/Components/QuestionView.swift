@@ -11,6 +11,8 @@ struct QuestionView: View {
     let onGiveUp: () -> Void
     let onExit: () -> Void
 
+    private let neon = ArcadePalette.neon
+
     var body: some View {
         VStack(spacing: 24) {
             SessionHeaderView(header: header, onExit: onExit)
@@ -38,18 +40,14 @@ struct QuestionView: View {
             Spacer()
 
             VStack(spacing: 16) {
-                Label("Listening…", systemImage: "waveform")
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
+                Label("LISTENING", systemImage: "waveform")
+                    .font(.system(size: 15, weight: .black, design: .monospaced))
+                    .foregroundStyle(neon)
+                    .tracking(2)
                     .symbolEffect(.variableColor.iterative, options: .repeating)
 
-                Button(action: onGiveUp) {
-                    Text("I don't know")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                }
-                .buttonStyle(.bordered)
+                Button("I DON'T KNOW", action: onGiveUp)
+                    .buttonStyle(.neon(ArcadePalette.hot, filled: false))
             }
             .padding(.bottom, 16)
         }
@@ -59,13 +57,13 @@ struct QuestionView: View {
     @ViewBuilder
     private var transcriptView: some View {
         if transcript.isEmpty {
-            Text("Say it in \(round.answerLanguage.displayName)")
-                .font(.title3)
-                .foregroundStyle(.tertiary)
+            Text("SAY IT IN \(round.answerLanguage.displayName.uppercased())")
+                .font(.system(size: 15, weight: .bold, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.4))
         } else {
             Text("“\(transcript)”")
-                .font(.title3.weight(.medium))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 22, weight: .black, design: .monospaced))
+                .foregroundStyle(neon)
                 .multilineTextAlignment(.center)
                 .transition(.opacity)
         }
@@ -81,9 +79,10 @@ struct QuestionView: View {
 
             Spacer()
 
-            Text("Tap anywhere to reveal")
-                .font(.headline)
-                .foregroundStyle(.tertiary)
+            Text("TAP TO REVEAL")
+                .font(.system(size: 15, weight: .black, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.4))
+                .tracking(2)
                 .padding(.bottom, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

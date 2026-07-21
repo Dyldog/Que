@@ -14,18 +14,6 @@ final class UserDefaultsBestTimeStore: BestTimeStore {
         set { setTime(newValue, forKey: fastestWordKey) }
     }
 
-    func bestSprintTime(target: Int) -> TimeInterval? {
-        time(forKey: sprintKey(target))
-    }
-
-    func setBestSprintTime(_ time: TimeInterval, target: Int) {
-        setTime(time, forKey: sprintKey(target))
-    }
-
-    private func sprintKey(_ target: Int) -> String {
-        "bestSprintTime_\(target)"
-    }
-
     private func time(forKey key: String) -> TimeInterval? {
         defaults.object(forKey: key) as? TimeInterval
     }

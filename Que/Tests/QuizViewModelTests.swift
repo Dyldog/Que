@@ -15,30 +15,34 @@ struct QuizViewModelTests {
 
     private func makeViewModel(
         clock: TestClock,
-        store: BestTimeStore,
+        bestTimes: BestTimeStore = InMemoryBestTimeStore(),
+        leaderboard: LeaderboardStore = InMemoryLeaderboardStore(),
         speech: SpeechRecognizing = FakeSpeechRecognizer()
     ) -> QuizViewModel {
         QuizViewModel(
             words: [Word(id: 0, spanish: "Qué", english: "What?")],
             tickInterval: 60, // effectively no timer ticks during tests
             now: { clock.now },
-            bestTimes: store,
+            bestTimes: bestTimes,
+            leaderboard: leaderboard,
             speech: speech
         )
     }
 
-    /// Answer a sprint question that takes `recall` seconds to reveal.
+    /// Answer a question that takes `recall` seconds, via the manual path.
     private func answer(_ viewModel: QuizViewModel, clock: TestClock, recall: TimeInterval, correct: Bool) {
         clock.advance(recall)
         viewModel.reveal()
         viewModel.grade(correct: correct)
     }
 
+    // MARK: - Fastest word
+
     @Test
     func fastestWordTimeTracksTheQuickestRecall() {
         let clock = TestClock()
         let store = InMemoryBestTimeStore()
-        let viewModel = makeViewModel(clock: clock, store: store)
+        let viewModel = makeViewModel(clock: clock, bestTimes: store)
 
         viewModel.startSprint(target: 3, waitsEnabled: false)
         answer(viewModel, clock: clock, recall: 5, correct: true)
@@ -55,9 +59,7 @@ struct QuizViewModelTests {
     @Test
     func fastestWordTimeSeedsFromTheStore() {
         let clock = TestClock()
-        let store = InMemoryBestTimeStore(fastestWordTime: 3)
-        let viewModel = makeViewModel(clock: clock, store: store)
-
+        let viewModel = makeViewModel(clock: clock, bestTimes: InMemoryBestTimeStore(fastestWordTime: 3))
         #expect(viewModel.fastestWordTime == 3)
 
         viewModel.startSprint(target: 1, waitsEnabled: false)
@@ -65,11 +67,13 @@ struct QuizViewModelTests {
         #expect(viewModel.fastestWordTime == 3)
     }
 
+    // MARK: - Sprint completion + leaderboard
+
     @Test
-    func sprintFinishesAfterTargetAndRecordsTotalTime() {
+    func sprintFinishesIntoNameEntryThenRecordsScore() {
         let clock = TestClock()
-        let store = InMemoryBestTimeStore()
-        let viewModel = makeViewModel(clock: clock, store: store)
+        let leaderboard = InMemoryLeaderboardStore()
+        let viewModel = makeViewModel(clock: clock, leaderboard: leaderboard)
 
         viewModel.startSprint(target: 3, waitsEnabled: false)
         answer(viewModel, clock: clock, recall: 2, correct: true)
@@ -77,54 +81,69 @@ struct QuizViewModelTests {
         #expect(viewModel.phase == .question) // not finished yet
         answer(viewModel, clock: clock, recall: 4, correct: true)
 
-        #expect(viewModel.phase == .results)
+        // Finishing goes to name entry, not straight to results.
+        #expect(viewModel.phase == .nameEntry)
         let result = try! #require(viewModel.lastResult)
-        #expect(result.target == 3)
-        #expect(result.totalTime == 9)      // 2 + 3 + 4, no waits in a sprint
+        #expect(result.config == SprintConfig(target: 3, waitsEnabled: false))
+        #expect(result.totalTime == 9) // 2 + 3 + 4, no waits
         #expect(result.correctCount == 2)
-        #expect(result.isNewBest == true)
-        #expect(result.previousBest == nil)
-        #expect(store.bestSprintTime(target: 3) == 9)
+
+        viewModel.submitInitials("dje")
+        #expect(viewModel.phase == .results)
+        #expect(viewModel.placement == 0)
+
+        let entries = leaderboard.entries(for: result.config)
+        #expect(entries.count == 1)
+        #expect(entries[0].initials == "DJE") // normalized to uppercase
+        #expect(entries[0].time == 9)
     }
 
     @Test
-    func sprintReportsNewBestOnlyWhenBeatingThePreviousTime() {
+    func aSlowerSecondRunPlacesBelowTheFirst() {
         let clock = TestClock()
-        let store = InMemoryBestTimeStore(sprintTimes: [2: 10])
-        let viewModel = makeViewModel(clock: clock, store: store)
+        let leaderboard = InMemoryLeaderboardStore()
+        let viewModel = makeViewModel(clock: clock, leaderboard: leaderboard)
 
-        // A slower run does not beat the record.
-        viewModel.startSprint(target: 2, waitsEnabled: false)
-        answer(viewModel, clock: clock, recall: 6, correct: true)
-        answer(viewModel, clock: clock, recall: 6, correct: true)
-        var result = try! #require(viewModel.lastResult)
-        #expect(result.totalTime == 12)
-        #expect(result.isNewBest == false)
-        #expect(result.previousBest == 10)
-        #expect(store.bestSprintTime(target: 2) == 10) // unchanged
+        viewModel.startSprint(target: 1, waitsEnabled: false)
+        answer(viewModel, clock: clock, recall: 5, correct: true)
+        viewModel.submitInitials("AAA")
+        #expect(viewModel.placement == 0)
 
-        // A faster run sets a new record.
-        viewModel.startSprint(target: 2, waitsEnabled: false)
-        answer(viewModel, clock: clock, recall: 3, correct: true)
-        answer(viewModel, clock: clock, recall: 4, correct: true)
-        result = try! #require(viewModel.lastResult)
-        #expect(result.totalTime == 7)
-        #expect(result.isNewBest == true)
-        #expect(store.bestSprintTime(target: 2) == 7)
+        viewModel.playAgain()
+        answer(viewModel, clock: clock, recall: 9, correct: true)
+        viewModel.submitInitials("BBB")
+        #expect(viewModel.placement == 1) // slower → second place
+
+        let entries = leaderboard.entries(for: SprintConfig(target: 1, waitsEnabled: false))
+        #expect(entries.map(\.initials) == ["AAA", "BBB"])
     }
+
+    @Test
+    func suggestedInitialsUseTheLastEntry() {
+        let clock = TestClock()
+        let leaderboard = InMemoryLeaderboardStore()
+        let viewModel = makeViewModel(clock: clock, leaderboard: leaderboard)
+        #expect(viewModel.suggestedInitials == "AAA")
+
+        viewModel.startSprint(target: 1, waitsEnabled: false)
+        answer(viewModel, clock: clock, recall: 5, correct: true)
+        viewModel.submitInitials("ZZZ")
+        #expect(viewModel.suggestedInitials == "ZZZ")
+    }
+
+    // MARK: - Waits
 
     @Test
     func sprintWithWaitsEnforcesTheWaitBetweenWords() {
         let clock = TestClock()
-        let viewModel = makeViewModel(clock: clock, store: InMemoryBestTimeStore())
+        let viewModel = makeViewModel(clock: clock)
 
         viewModel.startSprint(target: 3, waitsEnabled: true)
-        // First word is immediate (wait starts at zero).
-        #expect(viewModel.phase == .question)
+        #expect(viewModel.phase == .question) // first word is immediate
 
         clock.advance(4)
         viewModel.reveal()
-        viewModel.grade(correct: true) // wait becomes 4 / 2 = 2s, so a wait is enforced
+        viewModel.grade(correct: true) // wait becomes 4 / 2 = 2s
         #expect(viewModel.phase == .waiting)
         #expect(viewModel.waitTime == 2)
     }
@@ -132,35 +151,27 @@ struct QuizViewModelTests {
     @Test
     func sprintWithoutWaitsGoesStraightToTheNextWord() {
         let clock = TestClock()
-        let viewModel = makeViewModel(clock: clock, store: InMemoryBestTimeStore())
+        let viewModel = makeViewModel(clock: clock)
 
         viewModel.startSprint(target: 3, waitsEnabled: false)
         clock.advance(4)
         viewModel.reveal()
         viewModel.grade(correct: true)
-        #expect(viewModel.phase == .question) // no wait
+        #expect(viewModel.phase == .question)
     }
 
     // MARK: - Speech grading
 
     @Test
     func prepareEnablesSpeechWhenAuthorized() async {
-        let viewModel = makeViewModel(
-            clock: TestClock(),
-            store: InMemoryBestTimeStore(),
-            speech: FakeSpeechRecognizer(authorized: true, isAvailable: true)
-        )
+        let viewModel = makeViewModel(clock: TestClock(), speech: FakeSpeechRecognizer(authorized: true, isAvailable: true))
         await viewModel.prepare()
         #expect(viewModel.speechEnabled)
     }
 
     @Test
     func prepareLeavesSpeechDisabledWhenDenied() async {
-        let viewModel = makeViewModel(
-            clock: TestClock(),
-            store: InMemoryBestTimeStore(),
-            speech: FakeSpeechRecognizer(authorized: false)
-        )
+        let viewModel = makeViewModel(clock: TestClock(), speech: FakeSpeechRecognizer(authorized: false))
         await viewModel.prepare()
         #expect(!viewModel.speechEnabled)
     }
@@ -168,9 +179,8 @@ struct QuizViewModelTests {
     @Test
     func hearingTheCorrectAnswerAutoGradesItCorrect() async {
         let clock = TestClock()
-        let store = InMemoryBestTimeStore()
         let speech = FakeSpeechRecognizer()
-        let viewModel = makeViewModel(clock: clock, store: store, speech: speech)
+        let viewModel = makeViewModel(clock: clock, speech: speech)
         await viewModel.prepare()
 
         viewModel.startSprint(target: 3, waitsEnabled: false)
@@ -183,7 +193,7 @@ struct QuizViewModelTests {
 
         #expect(viewModel.phase == .answer)
         #expect(viewModel.spokenResult == true)
-        #expect(!speech.isListening) // stopped once matched
+        #expect(!speech.isListening)
         #expect(viewModel.fastestWordTime == 2)
     }
 
@@ -191,7 +201,7 @@ struct QuizViewModelTests {
     func hearingAWrongAnswerKeepsListening() async {
         let clock = TestClock()
         let speech = FakeSpeechRecognizer()
-        let viewModel = makeViewModel(clock: clock, store: InMemoryBestTimeStore(), speech: speech)
+        let viewModel = makeViewModel(clock: clock, speech: speech)
         await viewModel.prepare()
 
         viewModel.startSprint(target: 3, waitsEnabled: false)
@@ -206,7 +216,7 @@ struct QuizViewModelTests {
     func givingUpAutoGradesIncorrect() async {
         let clock = TestClock()
         let speech = FakeSpeechRecognizer()
-        let viewModel = makeViewModel(clock: clock, store: InMemoryBestTimeStore(), speech: speech)
+        let viewModel = makeViewModel(clock: clock, speech: speech)
         await viewModel.prepare()
 
         viewModel.startSprint(target: 3, waitsEnabled: false)

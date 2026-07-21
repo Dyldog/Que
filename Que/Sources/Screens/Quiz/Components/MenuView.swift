@@ -1,142 +1,146 @@
 import SwiftUI
 
-/// The landing screen: the app title, the fastest-word record, a shared wait-time
-/// toggle, and the choice between endless Practice and a timed Sprint over a
-/// chosen number of questions.
+/// The landing screen, styled like a pinball backglass: the marquee title, the
+/// sprint setup, and a High Scores button.
 struct MenuView: View {
-    let fastestWordTime: TimeInterval?
-    /// Looks up the best time for a given sprint length, to show as a target.
-    let bestSprintTime: (Int) -> TimeInterval?
-    let onStartPractice: (Bool) -> Void
     let onStartSprint: (Int, Bool) -> Void
+    let onOpenLeaderboard: () -> Void
 
     private static let presetCounts = [10, 50, 100]
 
     @State private var selection: SprintSelection = .preset(10)
     @State private var customText = "25"
     @State private var waitsEnabled = true
+    @State private var marqueeGlow = false
+
+    private let neon = ArcadePalette.neon
+    private let hot = ArcadePalette.hot
 
     var body: some View {
         VStack(spacing: 24) {
-            header
-            waitsToggle
-            practiceButton
-            sprintCard
+            Spacer()
+            marquee
+            Spacer()
+            setupPanel
+            leaderboardButton
             Spacer()
         }
         .padding()
     }
 
-    // MARK: - Header
+    // MARK: - Marquee
 
-    private var header: some View {
-        VStack(spacing: 8) {
-            Text("¿Qué?")
-                .font(.system(size: 64, weight: .heavy))
-            Text("Learn the Spanish interrogatives")
-                .font(.headline)
-                .foregroundStyle(.secondary)
-            if let fastestWordTime {
-                Label("Fastest word \(fastestWordTime.stopwatchText)", systemImage: "bolt.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
-                    .padding(.top, 4)
+    private var marquee: some View {
+        VStack(spacing: 10) {
+            Text("¿QUÉ?")
+                .font(.system(size: 76, weight: .black, design: .monospaced))
+                .foregroundStyle(ArcadePalette.gold)
+                .neonGlow(ArcadePalette.gold, radius: marqueeGlow ? 22 : 12)
+            Text("SPANISH INTERROGATIVES")
+                .font(.system(size: 14, weight: .black, design: .monospaced))
+                .foregroundStyle(hot)
+                .tracking(3)
+                .neonGlow(hot, radius: 8)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.3).repeatForever(autoreverses: true)) {
+                marqueeGlow = true
             }
         }
-        .padding(.top, 32)
     }
 
-    // MARK: - Shared wait-time toggle
+    // MARK: - Setup
 
-    private var waitsToggle: some View {
-        Toggle(isOn: $waitsEnabled) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Wait time between words")
-                Text("Adaptive spacing, in both modes")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal, 4)
-    }
+    private var setupPanel: some View {
+        VStack(spacing: 18) {
+            Text("SPRINT")
+                .font(.system(size: 18, weight: .black, design: .monospaced))
+                .foregroundStyle(neon)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-    // MARK: - Practice
-
-    private var practiceButton: some View {
-        Button {
-            onStartPractice(waitsEnabled)
-        } label: {
-            VStack(spacing: 4) {
-                Text("Practice")
-                    .font(.title2.weight(.bold))
-                Text("Endless")
-                    .font(.subheadline)
-                    .opacity(0.9)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 88)
-        }
-        .buttonStyle(.borderedProminent)
-    }
-
-    // MARK: - Sprint
-
-    private var sprintCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Sprint")
-                .font(.title2.weight(.bold))
-            Text("Fastest time for a set number of questions")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            countPicker
+            countSelector
 
             if case .custom = selection {
                 customField
             }
 
-            if let best = bestSprintTime(resolvedCount) {
-                Label("Best for \(resolvedCount) · \(best.stopwatchText)", systemImage: "trophy.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            waitToggle
 
-            Button {
+            Button("START") {
                 onStartSprint(resolvedCount, waitsEnabled)
-            } label: {
-                Text("Start Sprint · \(resolvedCount) questions")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.neon())
             .disabled(resolvedCount < 1)
         }
-        .padding()
-        .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 24))
+        .padding(20)
+        .pinballPanel()
     }
 
-    private var countPicker: some View {
-        Picker("Questions", selection: $selection) {
+    private var countSelector: some View {
+        HStack(spacing: 8) {
             ForEach(Self.presetCounts, id: \.self) { count in
-                Text("\(count)").tag(SprintSelection.preset(count))
+                countPill("\(count)", selected: selection == .preset(count)) {
+                    selection = .preset(count)
+                }
             }
-            Text("Custom").tag(SprintSelection.custom)
+            countPill("CUSTOM", selected: selection == .custom) {
+                selection = .custom
+            }
         }
-        .pickerStyle(.segmented)
+    }
+
+    private func countPill(_ label: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.system(size: 15, weight: .black, design: .monospaced))
+                .foregroundStyle(selected ? .black : neon)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background {
+                    if selected {
+                        Capsule().fill(neon)
+                    } else {
+                        Capsule().strokeBorder(neon.opacity(0.5), lineWidth: 1.5)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
     }
 
     private var customField: some View {
         HStack {
-            Text("Questions")
-                .foregroundStyle(.secondary)
+            Text("QUESTIONS")
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.6))
             Spacer()
-            TextField("Count", text: $customText)
+            TextField("", text: $customText)
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.trailing)
-                .font(.title3.weight(.semibold).monospacedDigit())
-                .frame(width: 100)
+                .font(.system(size: 22, weight: .black, design: .monospaced))
+                .foregroundStyle(neon)
+                .frame(width: 90)
         }
+    }
+
+    private var waitToggle: some View {
+        Toggle(isOn: $waitsEnabled) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("WAIT TIME")
+                    .font(.system(size: 14, weight: .black, design: .monospaced))
+                    .foregroundStyle(.white)
+                Text("Adaptive spacing between words")
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.45))
+            }
+        }
+        .tint(neon)
+    }
+
+    private var leaderboardButton: some View {
+        Button(action: onOpenLeaderboard) {
+            Label("HIGH SCORES", systemImage: "trophy.fill")
+        }
+        .buttonStyle(.neon(hot, filled: false))
     }
 
     /// The number of questions the current selection resolves to.
@@ -155,10 +159,8 @@ private enum SprintSelection: Hashable {
 }
 
 #Preview {
-    MenuView(
-        fastestWordTime: 1.8,
-        bestSprintTime: { $0 == 10 ? 42.5 : nil },
-        onStartPractice: { _ in },
-        onStartSprint: { _, _ in }
-    )
+    ZStack {
+        PinballBackground()
+        MenuView(onStartSprint: { _, _ in }, onOpenLeaderboard: {})
+    }
 }

@@ -1,21 +1,27 @@
 import SwiftUI
 
-/// The single screen of the app. Renders the current phase of the practice session.
+/// The single screen of the app. Renders the current phase of the sprint over the
+/// shared pinball backglass.
 struct QuizView: View {
     @StateObject private var viewModel = QuizViewModel()
 
     var body: some View {
-        content
-            .animation(.easeInOut(duration: 0.2), value: viewModel.phase)
-            .padding()
-            // Ask for microphone/speech permission once, up front.
-            .task { await viewModel.prepare() }
-            // Vibrate when a forced wait ends...
-            .sensoryFeedback(.impact(weight: .heavy), trigger: viewModel.waitEndedSignal)
-            // ...and beep at the same moment.
-            .onChange(of: viewModel.waitEndedSignal) { _, _ in
-                WaitEndFeedback.play()
-            }
+        ZStack {
+            PinballBackground()
+            content
+                .animation(.easeInOut(duration: 0.2), value: viewModel.phase)
+                .padding()
+        }
+        .tint(ArcadePalette.neon)
+        .preferredColorScheme(.dark)
+        // Ask for microphone/speech permission once, up front.
+        .task { await viewModel.prepare() }
+        // Vibrate when a forced wait ends...
+        .sensoryFeedback(.impact(weight: .heavy), trigger: viewModel.waitEndedSignal)
+        // ...and beep at the same moment.
+        .onChange(of: viewModel.waitEndedSignal) { _, _ in
+            WaitEndFeedback.play()
+        }
     }
 
     @ViewBuilder
@@ -23,10 +29,8 @@ struct QuizView: View {
         switch viewModel.phase {
         case .menu:
             MenuView(
-                fastestWordTime: viewModel.fastestWordTime,
-                bestSprintTime: viewModel.bestSprintTime(target:),
-                onStartPractice: { viewModel.startPractice(waitsEnabled: $0) },
-                onStartSprint: { viewModel.startSprint(target: $0, waitsEnabled: $1) }
+                onStartSprint: { viewModel.startSprint(target: $0, waitsEnabled: $1) },
+                onOpenLeaderboard: viewModel.openLeaderboard
             )
 
         case .waiting:
@@ -61,14 +65,34 @@ struct QuizView: View {
                 )
             }
 
+        case .nameEntry:
+            if let result = viewModel.lastResult {
+                NameEntryView(
+                    time: result.totalTime,
+                    config: result.config,
+                    initialInitials: viewModel.suggestedInitials,
+                    onSubmit: viewModel.submitInitials
+                )
+            }
+
         case .results:
             if let result = viewModel.lastResult {
                 ResultsView(
                     result: result,
+                    placement: viewModel.placement,
+                    entries: viewModel.leaderboardEntries(for: result.config),
+                    highlightID: viewModel.lastEntryID,
                     onPlayAgain: viewModel.playAgain,
                     onMenu: viewModel.returnToMenu
                 )
             }
+
+        case .leaderboard:
+            LeaderboardBrowserView(
+                configs: viewModel.leaderboardConfigs(),
+                entries: { viewModel.leaderboardEntries(for: $0) },
+                onBack: viewModel.closeLeaderboard
+            )
         }
     }
 }

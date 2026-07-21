@@ -11,6 +11,9 @@ struct AnswerView: View {
     let onGrade: (Bool) -> Void
     let onExit: () -> Void
 
+    private let correctColor = ArcadePalette.neon
+    private let wrongColor = Color(red: 1.0, green: 0.32, blue: 0.4)
+
     var body: some View {
         VStack(spacing: 24) {
             SessionHeaderView(header: header, onExit: onExit)
@@ -20,7 +23,9 @@ struct AnswerView: View {
 
             VStack(spacing: 16) {
                 PromptText(text: round.promptText, emphasised: false)
-                Divider().frame(maxWidth: 120)
+                Rectangle()
+                    .fill(ArcadePalette.neon.opacity(0.4))
+                    .frame(width: 120, height: 2)
                 PromptText(text: round.answerText)
             }
 
@@ -43,21 +48,23 @@ struct AnswerView: View {
     }
 
     private func resultBanner(correct: Bool) -> some View {
-        VStack(spacing: 8) {
+        let color = correct ? correctColor : wrongColor
+        return VStack(spacing: 8) {
             Label(
-                correct ? "¡Correcto!" : "Not quite",
+                correct ? "¡CORRECTO!" : "NOPE",
                 systemImage: correct ? "checkmark.circle.fill" : "xmark.circle.fill"
             )
-            .font(.title.weight(.bold))
-            .foregroundStyle(correct ? Color.green : Color.red)
+            .font(.system(size: 30, weight: .black, design: .monospaced))
+            .foregroundStyle(color)
+            .neonGlow(color, radius: 12)
 
             if !correct, !transcript.isEmpty {
-                Text("You said “\(transcript)”")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                Text("YOU SAID “\(transcript.uppercased())”")
+                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.5))
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 140)
+        .frame(height: 130)
     }
 }
