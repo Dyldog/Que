@@ -8,6 +8,8 @@ struct QuizView: View {
         content
             .animation(.easeInOut(duration: 0.2), value: viewModel.phase)
             .padding()
+            // Ask for microphone/speech permission once, up front.
+            .task { await viewModel.prepare() }
             // Vibrate when a forced wait ends...
             .sensoryFeedback(.impact(weight: .heavy), trigger: viewModel.waitEndedSignal)
             // ...and beep at the same moment.
@@ -39,7 +41,10 @@ struct QuizView: View {
                 QuestionView(
                     round: round,
                     header: viewModel.header,
+                    speechEnabled: viewModel.speechEnabled,
+                    transcript: viewModel.transcript,
                     onReveal: viewModel.reveal,
+                    onGiveUp: viewModel.giveUp,
                     onExit: viewModel.returnToMenu
                 )
             }
@@ -49,6 +54,8 @@ struct QuizView: View {
                 AnswerView(
                     round: round,
                     header: viewModel.header,
+                    result: viewModel.spokenResult,
+                    transcript: viewModel.transcript,
                     onGrade: viewModel.grade,
                     onExit: viewModel.returnToMenu
                 )

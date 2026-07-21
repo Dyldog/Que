@@ -15,13 +15,15 @@ struct QuizViewModelTests {
 
     private func makeViewModel(
         clock: TestClock,
-        store: BestTimeStore
+        store: BestTimeStore,
+        speech: SpeechRecognizing = FakeSpeechRecognizer()
     ) -> QuizViewModel {
         QuizViewModel(
             words: [Word(id: 0, spanish: "Qué", english: "What?")],
             tickInterval: 60, // effectively no timer ticks during tests
             now: { clock.now },
-            bestTimes: store
+            bestTimes: store,
+            speech: speech
         )
     }
 
@@ -137,5 +139,82 @@ struct QuizViewModelTests {
         viewModel.reveal()
         viewModel.grade(correct: true)
         #expect(viewModel.phase == .question) // no wait
+    }
+
+    // MARK: - Speech grading
+
+    @Test
+    func prepareEnablesSpeechWhenAuthorized() async {
+        let viewModel = makeViewModel(
+            clock: TestClock(),
+            store: InMemoryBestTimeStore(),
+            speech: FakeSpeechRecognizer(authorized: true, isAvailable: true)
+        )
+        await viewModel.prepare()
+        #expect(viewModel.speechEnabled)
+    }
+
+    @Test
+    func prepareLeavesSpeechDisabledWhenDenied() async {
+        let viewModel = makeViewModel(
+            clock: TestClock(),
+            store: InMemoryBestTimeStore(),
+            speech: FakeSpeechRecognizer(authorized: false)
+        )
+        await viewModel.prepare()
+        #expect(!viewModel.speechEnabled)
+    }
+
+    @Test
+    func hearingTheCorrectAnswerAutoGradesItCorrect() async {
+        let clock = TestClock()
+        let store = InMemoryBestTimeStore()
+        let speech = FakeSpeechRecognizer()
+        let viewModel = makeViewModel(clock: clock, store: store, speech: speech)
+        await viewModel.prepare()
+
+        viewModel.startSprint(target: 3, waitsEnabled: false)
+        #expect(viewModel.phase == .question)
+        #expect(speech.isListening)
+
+        let expected = try! #require(viewModel.round?.answerText)
+        clock.advance(2)
+        speech.hear(expected)
+
+        #expect(viewModel.phase == .answer)
+        #expect(viewModel.spokenResult == true)
+        #expect(!speech.isListening) // stopped once matched
+        #expect(viewModel.fastestWordTime == 2)
+    }
+
+    @Test
+    func hearingAWrongAnswerKeepsListening() async {
+        let clock = TestClock()
+        let speech = FakeSpeechRecognizer()
+        let viewModel = makeViewModel(clock: clock, store: InMemoryBestTimeStore(), speech: speech)
+        await viewModel.prepare()
+
+        viewModel.startSprint(target: 3, waitsEnabled: false)
+        speech.hear("something unrelated")
+
+        #expect(viewModel.phase == .question)
+        #expect(viewModel.spokenResult == nil)
+        #expect(speech.isListening)
+    }
+
+    @Test
+    func givingUpAutoGradesIncorrect() async {
+        let clock = TestClock()
+        let speech = FakeSpeechRecognizer()
+        let viewModel = makeViewModel(clock: clock, store: InMemoryBestTimeStore(), speech: speech)
+        await viewModel.prepare()
+
+        viewModel.startSprint(target: 3, waitsEnabled: false)
+        clock.advance(3)
+        viewModel.giveUp()
+
+        #expect(viewModel.phase == .answer)
+        #expect(viewModel.spokenResult == false)
+        #expect(!speech.isListening)
     }
 }

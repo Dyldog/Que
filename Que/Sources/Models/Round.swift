@@ -13,6 +13,11 @@ struct Round: Equatable {
         text(for: promptLanguage.opposite)
     }
 
+    /// The language the user should answer in (and that speech recognition uses).
+    var answerLanguage: Language {
+        promptLanguage.opposite
+    }
+
     private func text(for language: Language) -> String {
         switch language {
         case .spanish: word.spanish

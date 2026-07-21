@@ -9,9 +9,19 @@ From the menu you choose a mode and whether the adaptive wait is on (it is by de
 
 1. A word appears in English or Spanish while a stopwatch ticks upward. The
    fastest single-word recall so far is shown just below it as a target to beat.
-2. Tap anywhere to reveal the translation, then grade yourself **Correct** or **Incorrect**.
-3. When the adaptive wait is on, you are made to wait before the next word — a
+2. **Say the translation out loud.** The app listens and grades you automatically:
+   the moment it hears the right word it marks you **Correct**; tap **I don't know**
+   to give up (counts as incorrect). Matching ignores case, accents, punctuation and
+   parenthetical qualifiers, and accepts the answer inside a longer phrase — see
+   [`AnswerMatcher`](Que/Sources/Shared/Speech/AnswerMatcher.swift).
+3. If microphone/speech permission is denied, it falls back to tap-to-reveal with
+   manual **Correct**/**Incorrect** buttons.
+4. When the adaptive wait is on, you are made to wait before the next word — a
    countdown ring shows the remaining time, and a beep + vibration fire when it ends.
+
+Speech uses `SFSpeechRecognizer` (Spanish or English depending on the answer
+language) behind the [`SpeechRecognizing`](Que/Sources/Shared/Speech/SpeechRecognizing.swift)
+protocol, so the view model is tested with a fake recognizer.
 
 ### Modes
 

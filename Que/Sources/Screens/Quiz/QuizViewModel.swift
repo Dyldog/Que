@@ -33,6 +33,12 @@ final class QuizViewModel: ObservableObject {
     @Published private(set) var lastResult: SprintResult?
     /// Increments each time a forced wait elapses, so the view can beep and vibrate.
     @Published private(set) var waitEndedSignal = 0
+    /// Whether spoken answers are being listened for (authorized and available).
+    @Published private(set) var speechEnabled = false
+    /// The latest transcript of what the user is saying, during `.question`.
+    @Published private(set) var transcript = ""
+    /// The auto-graded outcome shown during `.answer`, or `nil` in manual mode.
+    @Published private(set) var spokenResult: Bool?
 
     private var answeredCount = 0
     private var correctCount = 0
@@ -45,24 +51,38 @@ final class QuizViewModel: ObservableObject {
     private var answerTime: TimeInterval = 0
     private var waitEnd: Date?
     private var sprintStart: Date?
+    private var answerShownAt: Date?
 
     private let words: [Word]
     private let now: () -> Date
     private let tickInterval: TimeInterval
+    private let autoAdvanceDelay: TimeInterval
     private let bestTimes: BestTimeStore
+    private let speech: SpeechRecognizing
     private var timerCancellable: AnyCancellable?
 
     init(
         words: [Word] = WordBank.all,
         tickInterval: TimeInterval = 1.0 / 30.0,
+        autoAdvanceDelay: TimeInterval = 1.8,
         now: @escaping () -> Date = Date.init,
-        bestTimes: BestTimeStore = UserDefaultsBestTimeStore()
+        bestTimes: BestTimeStore = UserDefaultsBestTimeStore(),
+        speech: SpeechRecognizing = SpeechRecognizer()
     ) {
         self.words = words
         self.tickInterval = tickInterval
+        self.autoAdvanceDelay = autoAdvanceDelay
         self.now = now
         self.bestTimes = bestTimes
+        self.speech = speech
         self.fastestWordTime = bestTimes.fastestWordTime
+    }
+
+    /// Resolves microphone/speech permission once, before playing. Safe to call
+    /// repeatedly; it only prompts the first time.
+    func prepare() async {
+        let granted = await speech.requestAuthorization()
+        speechEnabled = granted && speech.isAvailable
     }
 
     /// The header shown while playing.
@@ -91,18 +111,74 @@ final class QuizViewModel: ObservableObject {
         start(mode: .sprint(target: max(1, target), waitsEnabled: waitsEnabled))
     }
 
-    /// Reveal the translation. Freezes the stopwatch at the recall time.
+    /// Reveal the translation manually (used when speech is unavailable). Freezes
+    /// the stopwatch and shows the grade buttons.
     func reveal() {
         guard phase == .question, let questionStart else { return }
         answerTime = now().timeIntervalSince(questionStart)
         elapsed = answerTime
         recordWordTime(answerTime)
+        spokenResult = nil
         phase = .answer
     }
 
-    /// Grade the just-revealed word and move on.
+    /// Give up on the current word: reveal the answer and grade it incorrect.
+    func giveUp() {
+        autoGrade(correct: false)
+    }
+
+    /// Grade a manually revealed word (fallback grade buttons) and move on.
     func grade(correct: Bool) {
-        guard phase == .answer else { return }
+        guard phase == .answer, spokenResult == nil else { return }
+        commitGrade(correct: correct)
+    }
+
+    /// Leave the current session and return to the menu.
+    func returnToMenu() {
+        speech.stop()
+        stopTimer()
+        round = nil
+        phase = .menu
+    }
+
+    /// Replay the just-finished sprint with the same settings.
+    func playAgain() {
+        start(mode: mode)
+    }
+
+    // MARK: - Speech grading
+
+    private func startListening() {
+        guard speechEnabled, let language = round?.answerLanguage else { return }
+        transcript = ""
+        try? speech.start(locale: language.locale) { [weak self] text in
+            self?.handleTranscript(text)
+        }
+    }
+
+    private func handleTranscript(_ text: String) {
+        guard phase == .question, let round else { return }
+        transcript = text
+        if AnswerMatcher.matches(transcript: text, answer: round.answerText) {
+            autoGrade(correct: true)
+        }
+    }
+
+    /// Freeze the stopwatch, show the answer with its outcome, and let the view
+    /// auto-advance after a short delay.
+    private func autoGrade(correct: Bool) {
+        guard phase == .question, let questionStart else { return }
+        speech.stop()
+        answerTime = now().timeIntervalSince(questionStart)
+        elapsed = answerTime
+        if correct { recordWordTime(answerTime) }
+        spokenResult = correct
+        answerShownAt = now()
+        phase = .answer
+    }
+
+    /// Apply a grade and advance to the wait, next word, or results.
+    private func commitGrade(correct: Bool) {
         answeredCount += 1
         if correct { correctCount += 1 }
 
@@ -115,23 +191,14 @@ final class QuizViewModel: ObservableObject {
             totalTime: total
         )
 
+        spokenResult = nil
+        answerShownAt = nil
+
         if let target = mode.target, answeredCount >= target {
             finishSprint(target: target)
         } else {
             beginNextWord()
         }
-    }
-
-    /// Leave the current session and return to the menu.
-    func returnToMenu() {
-        stopTimer()
-        round = nil
-        phase = .menu
-    }
-
-    /// Replay the just-finished sprint with the same settings.
-    func playAgain() {
-        start(mode: mode)
     }
 
     // MARK: - Session lifecycle
@@ -149,6 +216,7 @@ final class QuizViewModel: ObservableObject {
     }
 
     private func finishSprint(target: Int) {
+        speech.stop()
         let total = sprintStart.map { now().timeIntervalSince($0) } ?? sprintElapsed
         sprintElapsed = total
 
@@ -200,7 +268,10 @@ final class QuizViewModel: ObservableObject {
         }
         answerTime = 0
         elapsed = 0
+        transcript = ""
+        spokenResult = nil
         phase = .question
+        startListening()
     }
 
     // MARK: - Timer
@@ -240,7 +311,13 @@ final class QuizViewModel: ObservableObject {
                     waitRemaining = remaining
                 }
             }
-        case .menu, .answer, .results:
+        case .answer:
+            // After a spoken answer, show the result briefly then advance.
+            if let result = spokenResult, let answerShownAt,
+               now().timeIntervalSince(answerShownAt) >= autoAdvanceDelay {
+                commitGrade(correct: result)
+            }
+        case .menu, .results:
             break
         }
     }

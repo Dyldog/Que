@@ -2,6 +2,7 @@ import ProjectDescription
 
 let project = Project(
     name: "Que",
+    settings: .settings(base: ["SWIFT_VERSION": "5.0"]),
     targets: [
         .target(
             name: "Que",
@@ -14,6 +15,10 @@ let project = Project(
                 "UISupportedInterfaceOrientations": [
                     "UIInterfaceOrientationPortrait",
                 ],
+                "NSMicrophoneUsageDescription":
+                    "Que listens to your spoken answer so it can check it for you.",
+                "NSSpeechRecognitionUsageDescription":
+                    "Que uses speech recognition to tell whether you said the right word.",
             ]),
             sources: ["Que/Sources/**"],
             resources: ["Que/Resources/**"],
