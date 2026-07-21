@@ -5,6 +5,8 @@ import SwiftUI
 struct QuizView: View {
     @StateObject private var viewModel = QuizViewModel()
 
+    let waitsDisabled: Bool = true
+    
     var body: some View {
         ZStack {
             PinballBackground()
@@ -33,7 +35,8 @@ struct QuizView: View {
                 generationError: viewModel.generationError,
                 onChangeList: viewModel.openListPicker,
                 onStartSprint: { viewModel.startSprint(target: $0, waitsEnabled: $1) },
-                onOpenLeaderboard: viewModel.openLeaderboard
+                onOpenLeaderboard: viewModel.openLeaderboard,
+                waitDisabled: waitsDisabled
             )
 
         case .listPicker:
@@ -125,7 +128,8 @@ struct QuizView: View {
         case .leaderboard:
             LeaderboardBrowserView(
                 boards: viewModel.leaderboardBoards(),
-                onBack: viewModel.closeLeaderboard
+                onBack: viewModel.closeLeaderboard,
+                waitsDisabled: waitsDisabled
             )
         }
     }

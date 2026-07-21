@@ -13,8 +13,10 @@ struct MenuView: View {
 
     @State private var selection: SprintSelection = .preset(10)
     @State private var customText = "25"
-    @State private var waitsEnabled = true
+    @State private var waitsEnabled = false
     @State private var marqueeGlow = false
+    
+    let waitDisabled: Bool
 
     private let neon = ArcadePalette.neon
     private let hot = ArcadePalette.hot
@@ -82,14 +84,17 @@ struct MenuView: View {
 
     private var setupPanel: some View {
         VStack(spacing: 18) {
-            Text("SPRINT")
+            Text("ROUNDS")
                 .font(.system(size: 18, weight: .black, design: .monospaced))
                 .foregroundStyle(neon)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             countSelector
             if case .custom = selection { customField }
-            waitToggle
+            
+            if !waitDisabled {
+                waitToggle
+            }
 
             Button("START") { onStartSprint(resolvedCount, waitsEnabled) }
                 .buttonStyle(.neon())
@@ -180,7 +185,8 @@ private enum SprintSelection: Hashable {
             generationError: nil,
             onChangeList: {},
             onStartSprint: { _, _ in },
-            onOpenLeaderboard: {}
+            onOpenLeaderboard: {},
+            waitDisabled: true
         )
     }
 }

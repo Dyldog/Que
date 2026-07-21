@@ -5,6 +5,7 @@ import SwiftUI
 struct LeaderboardBrowserView: View {
     let boards: [LeaderboardBoard]
     let onBack: () -> Void
+    let waitsDisabled: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -53,6 +54,12 @@ struct LeaderboardBrowserView: View {
 
     private func title(for board: LeaderboardBoard) -> String {
         let config = board.config
-        return "\(board.title.uppercased()) · \(config.target) · \(config.waitsEnabled ? "WAITS" : "NO WAITS")"
+        return [
+            board.title.uppercased(),
+            "\(config.target)",
+            waitsDisabled ? nil : config.waitsEnabled ? "WAITS" : "NO WAITS"
+        ]
+        .compactMap { $0 }
+        .joined(separator: " · ")
     }
 }
