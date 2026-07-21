@@ -3,12 +3,13 @@ import SwiftUI
 /// The grading phase: the prompt, its translation, and the large grade buttons.
 struct AnswerView: View {
     let round: Round
-    let elapsed: TimeInterval
+    let header: SessionHeader
     let onGrade: (Bool) -> Void
+    let onExit: () -> Void
 
     var body: some View {
         VStack(spacing: 24) {
-            StopwatchLabel(elapsed: elapsed)
+            SessionHeaderView(header: header, onExit: onExit)
                 .padding(.top, 8)
 
             Spacer()

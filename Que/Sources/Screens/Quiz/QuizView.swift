@@ -8,23 +8,39 @@ struct QuizView: View {
         content
             .animation(.easeInOut(duration: 0.2), value: viewModel.phase)
             .padding()
+            // Vibrate when a forced wait ends...
+            .sensoryFeedback(.impact(weight: .heavy), trigger: viewModel.waitEndedSignal)
+            // ...and beep at the same moment.
+            .onChange(of: viewModel.waitEndedSignal) { _, _ in
+                WaitEndFeedback.play()
+            }
     }
 
     @ViewBuilder
     private var content: some View {
         switch viewModel.phase {
-        case .idle:
-            StartView(onStart: viewModel.start)
+        case .menu:
+            MenuView(
+                fastestWordTime: viewModel.fastestWordTime,
+                bestSprintTime: viewModel.bestSprintTime(target:),
+                onStartPractice: { viewModel.startPractice(waitsEnabled: $0) },
+                onStartSprint: { viewModel.startSprint(target: $0, waitsEnabled: $1) }
+            )
 
         case .waiting:
-            WaitingView(remaining: viewModel.waitRemaining, total: viewModel.waitTime)
+            WaitingView(
+                remaining: viewModel.waitRemaining,
+                total: viewModel.waitTime,
+                onExit: viewModel.returnToMenu
+            )
 
         case .question:
             if let round = viewModel.round {
                 QuestionView(
                     round: round,
-                    elapsed: viewModel.elapsed,
-                    onReveal: viewModel.reveal
+                    header: viewModel.header,
+                    onReveal: viewModel.reveal,
+                    onExit: viewModel.returnToMenu
                 )
             }
 
@@ -32,8 +48,18 @@ struct QuizView: View {
             if let round = viewModel.round {
                 AnswerView(
                     round: round,
-                    elapsed: viewModel.elapsed,
-                    onGrade: viewModel.grade
+                    header: viewModel.header,
+                    onGrade: viewModel.grade,
+                    onExit: viewModel.returnToMenu
+                )
+            }
+
+        case .results:
+            if let result = viewModel.lastResult {
+                ResultsView(
+                    result: result,
+                    onPlayAgain: viewModel.playAgain,
+                    onMenu: viewModel.returnToMenu
                 )
             }
         }

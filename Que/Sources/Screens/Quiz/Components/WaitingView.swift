@@ -5,6 +5,7 @@ import SwiftUI
 struct WaitingView: View {
     let remaining: TimeInterval
     let total: TimeInterval
+    let onExit: () -> Void
 
     private var progress: Double {
         guard total > 0 else { return 1 }
@@ -13,6 +14,20 @@ struct WaitingView: View {
 
     var body: some View {
         VStack(spacing: 32) {
+            HStack {
+                Button(action: onExit) {
+                    Image(systemName: "xmark")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(8)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Quit to menu")
+                Spacer()
+            }
+            .padding(.top, 8)
+
             Spacer()
 
             ZStack {
