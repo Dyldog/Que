@@ -1,12 +1,27 @@
 # Que
 
-A pinball-arcade-styled iOS app to practise the Spanish interrogative words. Race a
-**Sprint** for your fastest time, then punch your three initials into the leaderboard.
+A pinball-arcade-styled iOS vocabulary trainer. Pick a word list, race a **Sprint**
+for your fastest time, then punch your three initials into the leaderboard.
+
+## Word lists
+
+Choose a list from the menu's **LIST** selector:
+
+- **Bundled** lists compiled into the app (Interrogatives, Numbers, Colours, Days &
+  Months, Common Verbs) — see [`BundledLists`](Que/Sources/Models/BundledLists.swift).
+- **Custom** lists you build in the app (name, both languages, and word pairs).
+- **Generated** lists, where the "list" is really a *prompt*: its words are generated
+  on-device at the **start of each round** with Apple's Foundation Models
+  (`@Generable`) and never saved. The prompt and its languages are saved so it stays
+  selectable and keeps its own leaderboard. See
+  [`FoundationModelsWordListGenerator`](Que/Sources/Shared/Generation/FoundationModelsWordListGenerator.swift).
+
+Custom and prompt lists persist via [`WordListStore`](Que/Sources/Shared/Persistence/WordListStore.swift).
 
 ## How it works
 
-From the menu you pick how many questions (10 / 50 / 100 / custom) and whether the
-adaptive wait is on (it is by default), then hit **START**.
+From the menu you pick a list, how many questions (10 / 50 / 100 / custom), and
+whether the adaptive wait is on (it is by default), then hit **START**.
 
 1. A word appears in English or Spanish while a stopwatch ticks upward. The fastest
    single-word recall so far is shown just below it as a target to beat.
@@ -28,8 +43,9 @@ protocol, so the view model is tested with a fake recognizer.
 
 ### Leaderboards
 
-Scores are kept **separately for every configuration** (question count × wait on/off).
-Browse them all from the menu's **HIGH SCORES** button. Persistence and ranking live in
+Scores are kept **separately for every configuration** — that's the list (or prompt)
+× question count × wait on/off. Browse them all from the menu's **HIGH SCORES** button.
+Persistence and ranking live in
 [`LeaderboardStore`](Que/Sources/Shared/Persistence/LeaderboardStore.swift) /
 [`LeaderboardData`](Que/Sources/Shared/Persistence/LeaderboardData.swift).
 

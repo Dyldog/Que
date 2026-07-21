@@ -3,6 +3,7 @@ import SwiftUI
 /// The arcade-style "enter your initials" screen shown after a sprint ends.
 struct NameEntryView: View {
     let time: TimeInterval
+    let title: String
     let config: SprintConfig
     let initialInitials: String
     let onSubmit: (String) -> Void
@@ -15,8 +16,9 @@ struct NameEntryView: View {
     private let neon = ArcadePalette.neon
     private let hot = ArcadePalette.hot
 
-    init(time: TimeInterval, config: SprintConfig, initialInitials: String, onSubmit: @escaping (String) -> Void) {
+    init(time: TimeInterval, title: String, config: SprintConfig, initialInitials: String, onSubmit: @escaping (String) -> Void) {
         self.time = time
+        self.title = title
         self.config = config
         self.initialInitials = initialInitials
         self.onSubmit = onSubmit
@@ -25,7 +27,7 @@ struct NameEntryView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            title
+            titleBanner
             scoreboard
             reels
             hint
@@ -40,7 +42,7 @@ struct NameEntryView: View {
 
     // MARK: - Title
 
-    private var title: some View {
+    private var titleBanner: some View {
         VStack(spacing: 6) {
             Text("★ NEW SCORE ★")
                 .font(.system(size: 16, weight: .black, design: .monospaced))
@@ -77,7 +79,7 @@ struct NameEntryView: View {
     }
 
     private var configLabel: String {
-        "\(config.target) QUESTIONS · \(config.waitsEnabled ? "WAITS ON" : "NO WAITS")"
+        "\(title.uppercased()) · \(config.target) · \(config.waitsEnabled ? "WAITS ON" : "NO WAITS")"
     }
 
     // MARK: - Reels
@@ -145,7 +147,8 @@ struct NameEntryView: View {
         PinballBackground()
         NameEntryView(
             time: 38.4,
-            config: SprintConfig(target: 50, waitsEnabled: true),
+            title: "Interrogatives",
+            config: SprintConfig(listID: "x", target: 50, waitsEnabled: true),
             initialInitials: "DJE",
             onSubmit: { _ in }
         )

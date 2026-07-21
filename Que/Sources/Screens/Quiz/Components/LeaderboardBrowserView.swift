@@ -1,55 +1,33 @@
 import SwiftUI
 
-/// Browses every leaderboard, one section per configuration, reached from the menu.
+/// Browses every leaderboard, one section per configuration (list × count × waits),
+/// reached from the menu.
 struct LeaderboardBrowserView: View {
-    let configs: [SprintConfig]
-    let entries: (SprintConfig) -> [LeaderboardEntry]
+    let boards: [LeaderboardBoard]
     let onBack: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-            topBar
-            if configs.isEmpty {
+            TopBar(title: "HIGH SCORES", onBack: onBack)
+            if boards.isEmpty {
                 emptyState
             } else {
-                boards
+                content
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var topBar: some View {
-        ZStack {
-            Text("HIGH SCORES")
-                .font(.system(size: 22, weight: .black, design: .monospaced))
-                .foregroundStyle(ArcadePalette.hot)
-                .neonGlow(ArcadePalette.hot, radius: 10)
-            HStack {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.title2.weight(.black))
-                        .foregroundStyle(ArcadePalette.neon)
-                        .padding(8)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                Spacer()
-            }
-        }
-        .padding(.horizontal)
-        .padding(.top, 8)
-        .padding(.bottom, 16)
-    }
-
-    private var boards: some View {
+    private var content: some View {
         ScrollView {
             VStack(spacing: 22) {
-                ForEach(configs, id: \.self) { config in
+                ForEach(boards) { board in
                     VStack(alignment: .leading, spacing: 10) {
-                        Text(title(for: config))
+                        Text(title(for: board))
                             .font(.system(size: 14, weight: .black, design: .monospaced))
                             .foregroundStyle(ArcadePalette.gold)
-                        LeaderboardView(entries: entries(config))
+                            .lineLimit(2)
+                        LeaderboardView(entries: board.entries)
                     }
                     .padding(16)
                     .pinballPanel()
@@ -73,7 +51,8 @@ struct LeaderboardBrowserView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func title(for config: SprintConfig) -> String {
-        "\(config.target) QUESTIONS · \(config.waitsEnabled ? "WAITS ON" : "NO WAITS")"
+    private func title(for board: LeaderboardBoard) -> String {
+        let config = board.config
+        return "\(board.title.uppercased()) · \(config.target) · \(config.waitsEnabled ? "WAITS" : "NO WAITS")"
     }
 }

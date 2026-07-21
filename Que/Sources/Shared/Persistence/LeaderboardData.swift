@@ -1,13 +1,28 @@
 import Foundation
 
+/// A leaderboard for one configuration, with a display title.
+struct LeaderboardBoard: Identifiable, Equatable {
+    let config: SprintConfig
+    let title: String
+    let entries: [LeaderboardEntry]
+
+    var id: SprintConfig { config }
+}
+
 /// The persisted leaderboard state: one board of ranked entries per configuration,
-/// plus the last initials entered (to pre-fill the next entry). This value type
-/// holds the ranking logic so the concrete stores stay thin.
+/// plus the last initials entered. This value type holds the ranking logic so the
+/// concrete stores stay thin.
 struct LeaderboardData: Equatable, Codable {
     struct Board: Equatable, Codable {
+        var listID: String
         var target: Int
         var waitsEnabled: Bool
+        var title: String
         var entries: [LeaderboardEntry]
+
+        var config: SprintConfig {
+            SprintConfig(listID: listID, target: target, waitsEnabled: waitsEnabled)
+        }
     }
 
     var boards: [Board] = []
@@ -20,18 +35,18 @@ struct LeaderboardData: Equatable, Codable {
         board(for: config)?.entries ?? []
     }
 
-    func configs() -> [SprintConfig] {
-        boards.map { SprintConfig(target: $0.target, waitsEnabled: $0.waitsEnabled) }
+    func summaries() -> [LeaderboardBoard] {
+        boards.map { LeaderboardBoard(config: $0.config, title: $0.title, entries: $0.entries) }
     }
 
     /// Inserts an entry into the board for `config`, keeping entries sorted fastest
     /// first. Returns the zero-based rank of the inserted entry, or `nil` if it did
     /// not make the board.
-    mutating func add(_ entry: LeaderboardEntry, config: SprintConfig) -> Int? {
+    mutating func add(_ entry: LeaderboardEntry, config: SprintConfig, title: String) -> Int? {
         lastInitials = entry.initials
 
-        let index = boards.firstIndex { $0.target == config.target && $0.waitsEnabled == config.waitsEnabled }
-        if let index {
+        if let index = boards.firstIndex(where: { $0.config == config }) {
+            boards[index].title = title
             boards[index].entries.append(entry)
             boards[index].entries.sort { $0.time < $1.time }
             if boards[index].entries.count > Self.maxPerBoard {
@@ -39,12 +54,18 @@ struct LeaderboardData: Equatable, Codable {
             }
             return boards[index].entries.firstIndex { $0.id == entry.id }
         } else {
-            boards.append(Board(target: config.target, waitsEnabled: config.waitsEnabled, entries: [entry]))
+            boards.append(Board(
+                listID: config.listID,
+                target: config.target,
+                waitsEnabled: config.waitsEnabled,
+                title: title,
+                entries: [entry]
+            ))
             return 0
         }
     }
 
     private func board(for config: SprintConfig) -> Board? {
-        boards.first { $0.target == config.target && $0.waitsEnabled == config.waitsEnabled }
+        boards.first { $0.config == config }
     }
 }

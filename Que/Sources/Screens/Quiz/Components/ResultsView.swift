@@ -34,6 +34,10 @@ struct ResultsView: View {
 
     private var scoreboard: some View {
         VStack(spacing: 4) {
+            Text(result.title.uppercased())
+                .font(.system(size: 13, weight: .black, design: .monospaced))
+                .foregroundStyle(ArcadePalette.neon.opacity(0.8))
+                .lineLimit(1)
             Text(result.totalTime.stopwatchText)
                 .font(.system(size: 60, weight: .black, design: .monospaced))
                 .foregroundStyle(.white)
@@ -73,7 +77,8 @@ struct ResultsView: View {
         PinballBackground()
         ResultsView(
             result: SprintResult(
-                config: SprintConfig(target: 10, waitsEnabled: true),
+                config: SprintConfig(listID: "x", target: 10, waitsEnabled: true),
+                title: "Interrogatives",
                 totalTime: 38.4,
                 correctCount: 9
             ),

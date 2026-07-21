@@ -1,58 +1,59 @@
 import Combine
 import Foundation
 
-/// Drives a sprint: a state machine over the phases of a round plus the stopwatch,
-/// the optional adaptive wait between words, the fastest-word record, sprint
-/// progress, and leaderboard name entry.
+/// Drives a sprint over a chosen word list: a state machine over the phases of a
+/// round plus the stopwatch, the optional adaptive wait, the fastest-word record,
+/// sprint progress, list management, generation, and leaderboard name entry.
 @MainActor
 final class QuizViewModel: ObservableObject {
 
     enum Phase: Equatable {
-        /// The menu where a sprint is configured.
         case menu
-        /// The forced wait before the next word appears (when waits are enabled).
+        /// Choosing which list to play.
+        case listPicker
+        /// Building or editing a custom / prompt list.
+        case listEditor
+        /// Generating a prompt list's words at the start of a round.
+        case generating
         case waiting
-        /// A word is shown; the stopwatch ticks up while recalling it.
         case question
-        /// The translation is shown; the stopwatch is frozen.
         case answer
         /// Entering three initials for the leaderboard after a finished sprint.
         case nameEntry
-        /// A finished sprint's results and its leaderboard.
         case results
         /// Browsing the leaderboards from the menu.
         case leaderboard
     }
 
     @Published private(set) var phase: Phase = .menu
-    @Published private(set) var config = SprintConfig(target: 10, waitsEnabled: true)
+    @Published private(set) var config = SprintConfig(listID: "", target: 10, waitsEnabled: true)
+    @Published private(set) var selectedList: WordList
+    @Published private(set) var userLists: [WordList] = []
+    @Published var editingList: WordList?
+    @Published private(set) var generationError: String?
+
     @Published private(set) var round: Round?
-    /// Elapsed recall time shown by the stopwatch during `.question` / `.answer`.
     @Published private(set) var elapsed: TimeInterval = 0
-    /// Seconds still remaining in the current forced wait during `.waiting`.
     @Published private(set) var waitRemaining: TimeInterval = 0
-    /// The fastest single-word recall so far, shown as a target to beat.
     @Published private(set) var fastestWordTime: TimeInterval?
-    /// The result of the most recently finished sprint (awaiting or showing its score).
     @Published private(set) var lastResult: SprintResult?
-    /// The zero-based rank of the just-entered score, once initials are submitted.
     @Published private(set) var placement: Int?
-    /// The id of the just-entered leaderboard entry, so the results can highlight it.
     @Published private(set) var lastEntryID: UUID?
-    /// Increments each time a forced wait elapses, so the view can beep and vibrate.
     @Published private(set) var waitEndedSignal = 0
-    /// Whether spoken answers are being listened for (authorized and available).
     @Published private(set) var speechEnabled = false
-    /// The latest transcript of what the user is saying, during `.question`.
     @Published private(set) var transcript = ""
-    /// The auto-graded outcome shown during `.answer`, or `nil` in manual mode.
     @Published private(set) var spokenResult: Bool?
+
+    let bundledLists = BundledLists.all
 
     private var answeredCount = 0
     private var correctCount = 0
     private var sprintElapsed: TimeInterval = 0
+    private var activeTitle = ""
+    private var activeWords: [Word] = []
+    private var activeFront = Language.spanish
+    private var activeBack = Language.english
 
-    /// The wait time carried between rounds. Starts at zero so the first word is immediate.
     private(set) var waitTime: TimeInterval = 0
 
     private var questionStart: Date?
@@ -60,80 +61,151 @@ final class QuizViewModel: ObservableObject {
     private var waitEnd: Date?
     private var sprintStart: Date?
     private var answerShownAt: Date?
+    private var generationTask: Task<Void, Never>?
 
-    private let words: [Word]
     private let now: () -> Date
     private let tickInterval: TimeInterval
     private let autoAdvanceDelay: TimeInterval
     private let bestTimes: BestTimeStore
     private let leaderboard: LeaderboardStore
+    private let wordLists: WordListStore
+    private let generator: WordListGenerating
     private let speech: SpeechRecognizing
     private var timerCancellable: AnyCancellable?
 
     init(
-        words: [Word] = WordBank.all,
         tickInterval: TimeInterval = 1.0 / 30.0,
         autoAdvanceDelay: TimeInterval = 1.8,
         now: @escaping () -> Date = Date.init,
         bestTimes: BestTimeStore = UserDefaultsBestTimeStore(),
         leaderboard: LeaderboardStore = UserDefaultsLeaderboardStore(),
+        wordLists: WordListStore = UserDefaultsWordListStore(),
+        generator: WordListGenerating = FoundationModelsWordListGenerator(),
         speech: SpeechRecognizing = SpeechRecognizer()
     ) {
-        self.words = words
         self.tickInterval = tickInterval
         self.autoAdvanceDelay = autoAdvanceDelay
         self.now = now
         self.bestTimes = bestTimes
         self.leaderboard = leaderboard
+        self.wordLists = wordLists
+        self.generator = generator
         self.speech = speech
         self.fastestWordTime = bestTimes.fastestWordTime
+        self.selectedList = BundledLists.all[0]
+        self.userLists = wordLists.userLists()
     }
 
-    /// Resolves microphone/speech permission once, before playing. Safe to call
-    /// repeatedly; it only prompts the first time.
+    /// Resolves microphone/speech permission once, before playing.
     func prepare() async {
         let granted = await speech.requestAuthorization()
         speechEnabled = granted && speech.isAvailable
     }
 
-    /// The header shown while playing.
     var header: SessionHeader {
         SessionHeader(
             elapsed: elapsed,
             fastestWordTime: fastestWordTime,
-            sprint: SprintProgress(
-                answered: answeredCount,
-                target: config.target,
-                totalElapsed: sprintElapsed
-            )
+            sprint: SprintProgress(answered: answeredCount, target: config.target, totalElapsed: sprintElapsed)
         )
     }
 
-    /// Initials to pre-fill the name-entry screen with.
-    var suggestedInitials: String {
-        leaderboard.lastInitials ?? "AAA"
-    }
+    var suggestedInitials: String { leaderboard.lastInitials ?? "AAA" }
+    var generationAvailable: Bool { generator.isAvailable }
+    var allLists: [WordList] { bundledLists + userLists }
 
-    /// Configurations that have leaderboard entries, ordered for display.
-    func leaderboardConfigs() -> [SprintConfig] {
-        leaderboard.configs().sorted {
-            ($0.target, $0.waitsEnabled ? 1 : 0) < ($1.target, $1.waitsEnabled ? 1 : 0)
+    func leaderboardBoards() -> [LeaderboardBoard] {
+        leaderboard.boards().sorted {
+            ($0.title, $0.config.target, $0.config.waitsEnabled ? 1 : 0)
+                < ($1.title, $1.config.target, $1.config.waitsEnabled ? 1 : 0)
         }
     }
 
-    /// The ranked entries for a configuration.
     func leaderboardEntries(for config: SprintConfig) -> [LeaderboardEntry] {
         leaderboard.entries(for: config)
     }
 
-    // MARK: - Intents
+    // MARK: - List selection & management
 
-    func startSprint(target: Int, waitsEnabled: Bool = true) {
-        start(config: SprintConfig(target: max(1, target), waitsEnabled: waitsEnabled))
+    func openListPicker() {
+        generationError = nil
+        phase = .listPicker
     }
 
-    /// Reveal the translation manually (used when speech is unavailable). Freezes
-    /// the stopwatch and shows the grade buttons.
+    func selectList(_ list: WordList) {
+        selectedList = list
+        phase = .menu
+    }
+
+    func createList(kind: WordList.Kind) {
+        editingList = WordList(
+            name: "",
+            kind: kind,
+            front: .spanish,
+            back: .english,
+            words: kind == .custom ? [Word(front: "", back: "")] : [],
+            prompt: kind == .prompt ? "" : nil
+        )
+        phase = .listEditor
+    }
+
+    func editList(_ list: WordList) {
+        editingList = list
+        phase = .listEditor
+    }
+
+    func saveList(_ list: WordList) {
+        wordLists.save(list)
+        userLists = wordLists.userLists()
+        selectedList = list
+        editingList = nil
+        phase = .listPicker
+    }
+
+    func deleteList(_ list: WordList) {
+        wordLists.delete(id: list.id)
+        userLists = wordLists.userLists()
+        if selectedList.id == list.id {
+            selectedList = bundledLists[0]
+        }
+        editingList = nil
+        phase = .listPicker
+    }
+
+    func cancelEditing() {
+        editingList = nil
+        phase = .listPicker
+    }
+
+    func backToMenu() {
+        phase = .menu
+    }
+
+    // MARK: - Intents
+
+    func startSprint(target: Int, waitsEnabled: Bool) {
+        generationError = nil
+        let list = selectedList
+        let config = SprintConfig(listID: list.id, target: max(1, target), waitsEnabled: waitsEnabled)
+
+        if list.isGenerated {
+            beginGenerated(list: list, config: config)
+        } else {
+            begin(config: config, title: list.name, words: list.words, front: list.front, back: list.back)
+        }
+    }
+
+    func cancelGeneration() {
+        generationTask?.cancel()
+        generationTask = nil
+        phase = .menu
+    }
+
+    /// Awaits any in-flight generation. Intended for tests.
+    func awaitGeneration() async {
+        await generationTask?.value
+    }
+
     func reveal() {
         guard phase == .question, let questionStart else { return }
         answerTime = now().timeIntervalSince(questionStart)
@@ -143,56 +215,122 @@ final class QuizViewModel: ObservableObject {
         phase = .answer
     }
 
-    /// Give up on the current word: reveal the answer and grade it incorrect.
     func giveUp() {
         autoGrade(correct: false)
     }
 
-    /// Grade a manually revealed word (fallback grade buttons) and move on.
     func grade(correct: Bool) {
         guard phase == .answer, spokenResult == nil else { return }
         commitGrade(correct: correct)
     }
 
-    /// Leave the current session and return to the menu.
     func returnToMenu() {
         speech.stop()
         stopTimer()
+        generationTask?.cancel()
         round = nil
         phase = .menu
     }
 
-    /// Record the entered initials against the finished sprint's leaderboard.
     func submitInitials(_ initials: String) {
         guard phase == .nameEntry, let result = lastResult else { return }
-        let entry = LeaderboardEntry(
-            initials: normalized(initials),
-            time: result.totalTime,
-            date: now()
-        )
-        placement = leaderboard.add(entry, config: result.config)
+        let entry = LeaderboardEntry(initials: normalized(initials), time: result.totalTime, date: now())
+        placement = leaderboard.add(entry, config: result.config, title: result.title)
         lastEntryID = entry.id
         phase = .results
     }
 
-    /// Replay the just-finished sprint with the same settings.
     func playAgain() {
-        start(config: config)
+        startSprint(target: config.target, waitsEnabled: config.waitsEnabled)
     }
 
-    /// Open the leaderboard browser from the menu.
     func openLeaderboard() {
         phase = .leaderboard
     }
 
-    /// Return to the menu from the leaderboard browser.
     func closeLeaderboard() {
         phase = .menu
     }
 
     private func normalized(_ initials: String) -> String {
-        let letters = initials.uppercased().filter { $0.isLetter }
-        return String(letters.prefix(3))
+        String(initials.uppercased().filter { $0.isLetter }.prefix(3))
+    }
+
+    // MARK: - Generation
+
+    private func beginGenerated(list: WordList, config: SprintConfig) {
+        phase = .generating
+        let front = list.front
+        let back = list.back
+        let promptText = list.prompt?.isEmpty == false ? list.prompt! : list.name
+        let count = generationCount(for: config.target)
+
+        generationTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let words = try await self.generator.generate(prompt: promptText, front: front, back: back, count: count)
+                guard !Task.isCancelled else { return }
+                self.begin(config: config, title: list.name, words: words, front: front, back: back)
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.generationError = self.message(for: error)
+                self.phase = .menu
+            }
+        }
+    }
+
+    private func generationCount(for target: Int) -> Int {
+        min(max(target, 12), 24)
+    }
+
+    private func message(for error: Error) -> String {
+        switch error {
+        case WordListGenerationError.unavailable:
+            "Generation isn’t available on this device."
+        default:
+            "Couldn’t generate this list. Please try again."
+        }
+    }
+
+    // MARK: - Session lifecycle
+
+    private func begin(config: SprintConfig, title: String, words: [Word], front: Language, back: Language) {
+        guard !words.isEmpty else {
+            generationError = "“\(title)” has no words yet."
+            phase = .menu
+            return
+        }
+        self.config = config
+        activeTitle = title
+        activeWords = words
+        activeFront = front
+        activeBack = back
+        waitTime = 0
+        answeredCount = 0
+        correctCount = 0
+        sprintElapsed = 0
+        sprintStart = nil
+        lastResult = nil
+        startTimer()
+        beginNextWord()
+    }
+
+    private func finishSprint() {
+        speech.stop()
+        let total = sprintStart.map { now().timeIntervalSince($0) } ?? sprintElapsed
+        sprintElapsed = total
+
+        lastResult = SprintResult(config: config, title: activeTitle, totalTime: total, correctCount: correctCount)
+        placement = nil
+        lastEntryID = nil
+        stopTimer()
+        phase = .nameEntry
+    }
+
+    private func recordWordTime(_ time: TimeInterval) {
+        guard fastestWordTime.map({ time < $0 }) ?? true else { return }
+        fastestWordTime = time
+        bestTimes.fastestWordTime = time
     }
 
     // MARK: - Speech grading
@@ -213,8 +351,6 @@ final class QuizViewModel: ObservableObject {
         }
     }
 
-    /// Freeze the stopwatch, show the answer with its outcome, and let the view
-    /// auto-advance after a short delay.
     private func autoGrade(correct: Bool) {
         guard phase == .question, let questionStart else { return }
         speech.stop()
@@ -226,17 +362,12 @@ final class QuizViewModel: ObservableObject {
         phase = .answer
     }
 
-    /// Apply a grade and advance to the wait, next word, or results.
     private func commitGrade(correct: Bool) {
         answeredCount += 1
         if correct { correctCount += 1 }
 
         let total = WaitTimeCalculator.totalTime(previousWait: waitTime, answerTime: answerTime)
-        waitTime = WaitTimeCalculator.nextWaitTime(
-            correct: correct,
-            currentWait: waitTime,
-            totalTime: total
-        )
+        waitTime = WaitTimeCalculator.nextWaitTime(correct: correct, currentWait: waitTime, totalTime: total)
 
         spokenResult = nil
         answerShownAt = nil
@@ -248,46 +379,14 @@ final class QuizViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Session lifecycle
-
-    private func start(config: SprintConfig) {
-        self.config = config
-        waitTime = 0
-        answeredCount = 0
-        correctCount = 0
-        sprintElapsed = 0
-        sprintStart = nil
-        lastResult = nil
-        startTimer()
-        beginNextWord()
-    }
-
-    private func finishSprint() {
-        speech.stop()
-        let total = sprintStart.map { now().timeIntervalSince($0) } ?? sprintElapsed
-        sprintElapsed = total
-
-        lastResult = SprintResult(
-            config: config,
-            totalTime: total,
-            correctCount: correctCount
-        )
-        placement = nil
-        lastEntryID = nil
-        stopTimer()
-        phase = .nameEntry
-    }
-
-    private func recordWordTime(_ time: TimeInterval) {
-        guard fastestWordTime.map({ time < $0 }) ?? true else { return }
-        fastestWordTime = time
-        bestTimes.fastestWordTime = time
-    }
-
     // MARK: - Phase transitions
 
     private func beginNextWord() {
-        round = Round.random(from: words)
+        guard let next = Round.random(from: activeWords, front: activeFront, back: activeBack) else {
+            returnToMenu()
+            return
+        }
+        round = next
         if config.waitsEnabled, waitTime > 0 {
             enterWaiting()
         } else {
@@ -304,9 +403,7 @@ final class QuizViewModel: ObservableObject {
     private func enterQuestion() {
         let start = now()
         questionStart = start
-        if sprintStart == nil {
-            sprintStart = start
-        }
+        if sprintStart == nil { sprintStart = start }
         answerTime = 0
         elapsed = 0
         transcript = ""
@@ -322,9 +419,7 @@ final class QuizViewModel: ObservableObject {
         timerCancellable = Timer
             .publish(every: tickInterval, on: .main, in: .common)
             .autoconnect()
-            .sink { [weak self] _ in
-                self?.tick()
-            }
+            .sink { [weak self] _ in self?.tick() }
     }
 
     private func stopTimer() {
@@ -332,8 +427,7 @@ final class QuizViewModel: ObservableObject {
     }
 
     private func tick() {
-        if let sprintStart,
-           phase == .question || phase == .waiting || phase == .answer {
+        if let sprintStart, phase == .question || phase == .waiting || phase == .answer {
             sprintElapsed = now().timeIntervalSince(sprintStart)
         }
 
@@ -354,12 +448,11 @@ final class QuizViewModel: ObservableObject {
                 }
             }
         case .answer:
-            // After a spoken answer, show the result briefly then advance.
             if let result = spokenResult, let answerShownAt,
                now().timeIntervalSince(answerShownAt) >= autoAdvanceDelay {
                 commitGrade(correct: result)
             }
-        case .menu, .nameEntry, .results, .leaderboard:
+        case .menu, .listPicker, .listEditor, .generating, .nameEntry, .results, .leaderboard:
             break
         }
     }

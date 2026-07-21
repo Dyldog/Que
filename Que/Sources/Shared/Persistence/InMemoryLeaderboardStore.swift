@@ -12,13 +12,13 @@ final class InMemoryLeaderboardStore: LeaderboardStore {
         data.entries(for: config)
     }
 
-    func configs() -> [SprintConfig] {
-        data.configs()
+    func boards() -> [LeaderboardBoard] {
+        data.summaries()
     }
 
     @discardableResult
-    func add(_ entry: LeaderboardEntry, config: SprintConfig) -> Int? {
-        data.add(entry, config: config)
+    func add(_ entry: LeaderboardEntry, config: SprintConfig, title: String) -> Int? {
+        data.add(entry, config: config, title: title)
     }
 
     var lastInitials: String? {

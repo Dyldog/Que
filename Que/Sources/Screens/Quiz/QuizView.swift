@@ -29,8 +29,42 @@ struct QuizView: View {
         switch viewModel.phase {
         case .menu:
             MenuView(
+                listName: viewModel.selectedList.name,
+                generationError: viewModel.generationError,
+                onChangeList: viewModel.openListPicker,
                 onStartSprint: { viewModel.startSprint(target: $0, waitsEnabled: $1) },
                 onOpenLeaderboard: viewModel.openLeaderboard
+            )
+
+        case .listPicker:
+            ListPickerView(
+                bundled: viewModel.bundledLists,
+                userLists: viewModel.userLists,
+                selectedID: viewModel.selectedList.id,
+                generationAvailable: viewModel.generationAvailable,
+                onSelect: viewModel.selectList,
+                onEdit: viewModel.editList,
+                onDelete: viewModel.deleteList,
+                onCreate: viewModel.createList,
+                onBack: viewModel.backToMenu
+            )
+
+        case .listEditor:
+            if let list = viewModel.editingList {
+                ListEditorView(
+                    list: list,
+                    canDelete: viewModel.userLists.contains { $0.id == list.id },
+                    generationAvailable: viewModel.generationAvailable,
+                    onSave: viewModel.saveList,
+                    onDelete: viewModel.deleteList,
+                    onCancel: viewModel.cancelEditing
+                )
+            }
+
+        case .generating:
+            GeneratingView(
+                listName: viewModel.selectedList.name,
+                onCancel: viewModel.cancelGeneration
             )
 
         case .waiting:
@@ -69,6 +103,7 @@ struct QuizView: View {
             if let result = viewModel.lastResult {
                 NameEntryView(
                     time: result.totalTime,
+                    title: result.title,
                     config: result.config,
                     initialInitials: viewModel.suggestedInitials,
                     onSubmit: viewModel.submitInitials
@@ -89,8 +124,7 @@ struct QuizView: View {
 
         case .leaderboard:
             LeaderboardBrowserView(
-                configs: viewModel.leaderboardConfigs(),
-                entries: { viewModel.leaderboardEntries(for: $0) },
+                boards: viewModel.leaderboardBoards(),
                 onBack: viewModel.closeLeaderboard
             )
         }

@@ -3,7 +3,7 @@ import Foundation
 /// A `LeaderboardStore` that persists to `UserDefaults` as a single JSON blob.
 final class UserDefaultsLeaderboardStore: LeaderboardStore {
     private let defaults: UserDefaults
-    private let key = "leaderboard.v1"
+    private let key = "leaderboard.v2"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -13,14 +13,14 @@ final class UserDefaultsLeaderboardStore: LeaderboardStore {
         load().entries(for: config)
     }
 
-    func configs() -> [SprintConfig] {
-        load().configs()
+    func boards() -> [LeaderboardBoard] {
+        load().summaries()
     }
 
     @discardableResult
-    func add(_ entry: LeaderboardEntry, config: SprintConfig) -> Int? {
+    func add(_ entry: LeaderboardEntry, config: SprintConfig, title: String) -> Int? {
         var data = load()
-        let rank = data.add(entry, config: config)
+        let rank = data.add(entry, config: config, title: title)
         save(data)
         return rank
     }

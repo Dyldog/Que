@@ -1,35 +1,34 @@
 import Foundation
 
-/// A single prompt: a word shown in one language, to be translated into the other.
+/// A single prompt: a word shown on one side, to be translated to the other.
 struct Round: Equatable {
     let word: Word
-    let promptLanguage: Language
+    /// Whether the `front` side is shown (and the `back` must be answered).
+    let promptIsFront: Bool
+    let frontLanguage: Language
+    let backLanguage: Language
 
     var promptText: String {
-        text(for: promptLanguage)
+        promptIsFront ? word.front : word.back
     }
 
     var answerText: String {
-        text(for: promptLanguage.opposite)
+        promptIsFront ? word.back : word.front
     }
 
     /// The language the user should answer in (and that speech recognition uses).
     var answerLanguage: Language {
-        promptLanguage.opposite
+        promptIsFront ? backLanguage : frontLanguage
     }
 
-    private func text(for language: Language) -> String {
-        switch language {
-        case .spanish: word.spanish
-        case .english: word.english
-        }
-    }
-
-    /// A random word shown in a random language.
-    static func random(from words: [Word] = WordBank.all) -> Round {
-        Round(
-            word: words.randomElement() ?? WordBank.all[0],
-            promptLanguage: Bool.random() ? .spanish : .english
+    /// A random word from the list, shown in a random direction.
+    static func random(from words: [Word], front: Language, back: Language) -> Round? {
+        guard let word = words.randomElement() else { return nil }
+        return Round(
+            word: word,
+            promptIsFront: Bool.random(),
+            frontLanguage: front,
+            backLanguage: back
         )
     }
 }

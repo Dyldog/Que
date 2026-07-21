@@ -1,8 +1,11 @@
 import SwiftUI
 
 /// The landing screen, styled like a pinball backglass: the marquee title, the
-/// sprint setup, and a High Scores button.
+/// chosen list, the sprint setup, and a High Scores button.
 struct MenuView: View {
+    let listName: String
+    let generationError: String?
+    let onChangeList: () -> Void
     let onStartSprint: (Int, Bool) -> Void
     let onOpenLeaderboard: () -> Void
 
@@ -17,27 +20,32 @@ struct MenuView: View {
     private let hot = ArcadePalette.hot
 
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
-            marquee
-            Spacer()
-            setupPanel
-            leaderboardButton
-            Spacer()
+        ScrollView {
+            VStack(spacing: 20) {
+                marquee
+                listButton
+                setupPanel
+                if let generationError {
+                    Text(generationError.uppercased())
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .foregroundStyle(hot)
+                        .multilineTextAlignment(.center)
+                }
+                leaderboardButton
+            }
+            .padding()
+            .padding(.top, 20)
         }
-        .padding()
     }
-
-    // MARK: - Marquee
 
     private var marquee: some View {
         VStack(spacing: 10) {
             Text("¿QUÉ?")
-                .font(.system(size: 76, weight: .black, design: .monospaced))
+                .font(.system(size: 68, weight: .black, design: .monospaced))
                 .foregroundStyle(ArcadePalette.gold)
                 .neonGlow(ArcadePalette.gold, radius: marqueeGlow ? 22 : 12)
-            Text("SPANISH INTERROGATIVES")
-                .font(.system(size: 14, weight: .black, design: .monospaced))
+            Text("VOCABULARY ARCADE")
+                .font(.system(size: 13, weight: .black, design: .monospaced))
                 .foregroundStyle(hot)
                 .tracking(3)
                 .neonGlow(hot, radius: 8)
@@ -49,7 +57,28 @@ struct MenuView: View {
         }
     }
 
-    // MARK: - Setup
+    private var listButton: some View {
+        Button(action: onChangeList) {
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("LIST")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.5))
+                    Text(listName.uppercased())
+                        .font(.system(size: 20, weight: .black, design: .monospaced))
+                        .foregroundStyle(neon)
+                        .lineLimit(1)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.headline.weight(.black))
+                    .foregroundStyle(neon)
+            }
+            .padding(18)
+            .pinballPanel()
+        }
+        .buttonStyle(.plain)
+    }
 
     private var setupPanel: some View {
         VStack(spacing: 18) {
@@ -59,18 +88,12 @@ struct MenuView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             countSelector
-
-            if case .custom = selection {
-                customField
-            }
-
+            if case .custom = selection { customField }
             waitToggle
 
-            Button("START") {
-                onStartSprint(resolvedCount, waitsEnabled)
-            }
-            .buttonStyle(.neon())
-            .disabled(resolvedCount < 1)
+            Button("START") { onStartSprint(resolvedCount, waitsEnabled) }
+                .buttonStyle(.neon())
+                .disabled(resolvedCount < 1)
         }
         .padding(20)
         .pinballPanel()
@@ -79,13 +102,9 @@ struct MenuView: View {
     private var countSelector: some View {
         HStack(spacing: 8) {
             ForEach(Self.presetCounts, id: \.self) { count in
-                countPill("\(count)", selected: selection == .preset(count)) {
-                    selection = .preset(count)
-                }
+                countPill("\(count)", selected: selection == .preset(count)) { selection = .preset(count) }
             }
-            countPill("CUSTOM", selected: selection == .custom) {
-                selection = .custom
-            }
+            countPill("CUSTOM", selected: selection == .custom) { selection = .custom }
         }
     }
 
@@ -97,11 +116,8 @@ struct MenuView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 44)
                 .background {
-                    if selected {
-                        Capsule().fill(neon)
-                    } else {
-                        Capsule().strokeBorder(neon.opacity(0.5), lineWidth: 1.5)
-                    }
+                    if selected { Capsule().fill(neon) }
+                    else { Capsule().strokeBorder(neon.opacity(0.5), lineWidth: 1.5) }
                 }
         }
         .buttonStyle(.plain)
@@ -143,7 +159,6 @@ struct MenuView: View {
         .buttonStyle(.neon(hot, filled: false))
     }
 
-    /// The number of questions the current selection resolves to.
     private var resolvedCount: Int {
         switch selection {
         case let .preset(count): count
@@ -152,7 +167,6 @@ struct MenuView: View {
     }
 }
 
-/// Which sprint length is selected in the menu.
 private enum SprintSelection: Hashable {
     case preset(Int)
     case custom
@@ -161,6 +175,12 @@ private enum SprintSelection: Hashable {
 #Preview {
     ZStack {
         PinballBackground()
-        MenuView(onStartSprint: { _, _ in }, onOpenLeaderboard: {})
+        MenuView(
+            listName: "Interrogatives",
+            generationError: nil,
+            onChangeList: {},
+            onStartSprint: { _, _ in },
+            onOpenLeaderboard: {}
+        )
     }
 }
