@@ -88,14 +88,14 @@ struct QuizViewModelTests {
     // MARK: - Sprint completion + leaderboard
 
     @Test
-    func sprintFinishesIntoNameEntryThenRecordsScorePerList() {
+    func flawlessSprintFinishesIntoNameEntryThenRecordsScorePerList() {
         let clock = TestClock()
         let leaderboard = InMemoryLeaderboardStore()
         let viewModel = makeViewModel(clock: clock, leaderboard: leaderboard)
 
         viewModel.startSprint(target: 3, waitsEnabled: false)
         answer(viewModel, clock: clock, recall: 2, correct: true)
-        answer(viewModel, clock: clock, recall: 3, correct: false)
+        answer(viewModel, clock: clock, recall: 3, correct: true)
         #expect(viewModel.phase == .question)
         answer(viewModel, clock: clock, recall: 4, correct: true)
 
@@ -104,7 +104,7 @@ struct QuizViewModelTests {
         #expect(result.config == SprintConfig(listID: "test.fixed", target: 3, waitsEnabled: false))
         #expect(result.title == "Test")
         #expect(result.totalTime == 9)
-        #expect(result.correctCount == 2)
+        #expect(result.correctCount == 3)
 
         viewModel.submitInitials("dje")
         #expect(viewModel.phase == .results)
@@ -119,6 +119,26 @@ struct QuizViewModelTests {
         let board = try! #require(leaderboard.boards().first)
         #expect(board.title == "Test")
         #expect(board.config.listID == "test.fixed")
+    }
+
+    @Test
+    func missingAnyAnswerSkipsNameEntryAndRecordsNothing() {
+        let clock = TestClock()
+        let leaderboard = InMemoryLeaderboardStore()
+        let viewModel = makeViewModel(clock: clock, leaderboard: leaderboard)
+
+        viewModel.startSprint(target: 3, waitsEnabled: false)
+        answer(viewModel, clock: clock, recall: 2, correct: true)
+        answer(viewModel, clock: clock, recall: 3, correct: false)
+        answer(viewModel, clock: clock, recall: 4, correct: true)
+
+        // One wrong answer means no leaderboard eligibility: straight to results.
+        #expect(viewModel.phase == .results)
+        let result = try! #require(viewModel.lastResult)
+        #expect(result.correctCount == 2)
+        #expect(viewModel.placement == nil)
+        #expect(viewModel.lastEntryID == nil)
+        #expect(leaderboard.boards().isEmpty)
     }
 
     @Test

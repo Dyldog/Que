@@ -324,7 +324,9 @@ final class QuizViewModel: ObservableObject {
         placement = nil
         lastEntryID = nil
         stopTimer()
-        phase = .nameEntry
+        // Only a flawless sprint earns a spot on the leaderboard; anything less
+        // skips straight to the results.
+        phase = correctCount >= config.target ? .nameEntry : .results
     }
 
     private func recordWordTime(_ time: TimeInterval) {
