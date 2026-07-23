@@ -72,9 +72,36 @@ struct ListPreviewView: View {
                 .font(.system(size: 12, weight: .black, design: .monospaced))
                 .foregroundStyle(.white.opacity(0.5))
             
-            LazyVStack(spacing: 6) {
-                ForEach(Array(list.words.enumerated()), id: \.element.id) { index, word in
-                    wordRow(index: index + 1, word: word)
+            if list.isGenerated {
+                // Generated list - show the prompt and explain
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("This list generates fresh words each round from the prompt:")
+                        .font(.system(size: 13, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.6))
+                    
+                    Text(list.prompt ?? "—")
+                        .font(.system(size: 14, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(ArcadePalette.hot.opacity(0.15), in: RoundedRectangle(cornerRadius: 10))
+                        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(ArcadePalette.hot.opacity(0.4), lineWidth: 1))
+                    
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(ArcadePalette.hot)
+                        Text("Words are generated on-device using Apple Intelligence when you start a sprint")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                    .padding(.top, 4)
+                }
+            } else {
+                // Fixed list - show all words
+                LazyVStack(spacing: 6) {
+                    ForEach(Array(list.words.enumerated()), id: \.element.id) { index, word in
+                        wordRow(index: index + 1, word: word)
+                    }
                 }
             }
         }
