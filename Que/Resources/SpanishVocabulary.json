@@ -203,6 +203,42 @@
     {
       "front": "amigo/a",
       "back": "friend"
+    },
+    {
+      "front": "no tengo",
+      "back": "I don't have"
+    },
+    {
+      "front": "vino",
+      "back": "wine"
+    },
+    {
+      "front": "hablo",
+      "back": "I speak"
+    },
+    {
+      "front": "soy",
+      "back": "I am (identity)"
+    },
+    {
+      "front": "australiano",
+      "back": "Australian"
+    },
+    {
+      "front": "Argentina",
+      "back": "Argentina"
+    },
+    {
+      "front": "mate",
+      "back": "mate (tea)"
+    },
+    {
+      "front": "celular",
+      "back": "phone"
+    },
+    {
+      "front": "laburo",
+      "back": "work"
     }
   ]
 }
