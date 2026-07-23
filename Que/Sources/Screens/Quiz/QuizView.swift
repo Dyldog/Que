@@ -42,6 +42,7 @@ struct QuizView: View {
         case .listPicker:
             ListPickerView(
                 bundled: viewModel.bundledLists,
+                bundledJSON: viewModel.bundledJSONLists,
                 userLists: viewModel.userLists,
                 selectedID: viewModel.selectedList.id,
                 generationAvailable: viewModel.generationAvailable,

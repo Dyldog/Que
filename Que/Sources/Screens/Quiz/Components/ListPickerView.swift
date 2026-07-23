@@ -4,6 +4,7 @@ import SwiftUI
 /// generated prompts), or the option to create a new one.
 struct ListPickerView: View {
     let bundled: [WordList]
+    let bundledJSON: [WordList]
     let userLists: [WordList]
     let selectedID: String
     let generationAvailable: Bool
@@ -19,6 +20,7 @@ struct ListPickerView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     section("BUNDLED", lists: bundled, editable: false)
+                    section("BUNDLED (JSON)", lists: bundledJSON, editable: false)
                     section("YOUR LISTS", lists: userLists, editable: true)
                     createButtons
                 }

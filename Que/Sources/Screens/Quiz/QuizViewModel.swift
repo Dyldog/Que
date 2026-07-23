@@ -29,6 +29,7 @@ final class QuizViewModel: ObservableObject {
     @Published private(set) var config = SprintConfig(listID: "", target: 10, waitsEnabled: true)
     @Published private(set) var selectedList: WordList
     @Published private(set) var userLists: [WordList] = []
+    @Published private(set) var bundledJSONLists: [WordList] = []
     @Published var editingList: WordList?
     @Published private(set) var generationError: String?
 
@@ -45,6 +46,8 @@ final class QuizViewModel: ObservableObject {
     @Published private(set) var spokenResult: Bool?
 
     let bundledLists = BundledLists.all
+    private let bundledJSONStore = BundledJSONWordListStore()
+    var bundledJSONLists: [WordList] { bundledJSONStore.userLists() }
 
     private var answeredCount = 0
     private var correctCount = 0
@@ -94,6 +97,12 @@ final class QuizViewModel: ObservableObject {
         self.fastestWordTime = bestTimes.fastestWordTime
         self.selectedList = BundledLists.all[0]
         self.userLists = wordLists.userLists()
+        self.bundledJSONLists = loadBundledJSONLists()
+    }
+    
+    private func loadBundledJSONLists() -> [WordList] {
+        let store = BundledJSONWordListStore()
+        return store.userLists()
     }
 
     /// Resolves microphone/speech permission once, before playing.
@@ -112,7 +121,7 @@ final class QuizViewModel: ObservableObject {
 
     var suggestedInitials: String { leaderboard.lastInitials ?? "AAA" }
     var generationAvailable: Bool { generator.isAvailable }
-    var allLists: [WordList] { bundledLists + userLists }
+    var allLists: [WordList] { bundledLists + bundledJSONLists + userLists }
 
     func leaderboardBoards() -> [LeaderboardBoard] {
         leaderboard.boards().sorted {
