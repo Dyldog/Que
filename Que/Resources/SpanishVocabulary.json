@@ -1,0 +1,184 @@
+{
+  "name": "Dylan's Spanish Vocabulary (A1 Rioplatense)",
+  "kind": "custom",
+  "front": "Spanish",
+  "back": "English",
+  "words": [
+    {
+      "front": "quiero",
+      "back": "I want"
+    },
+    {
+      "front": "tengo",
+      "back": "I have"
+    },
+    {
+      "front": "me gusta",
+      "back": "I like"
+    },
+    {
+      "front": "no",
+      "back": "not / no"
+    },
+    {
+      "front": "mi",
+      "back": "my"
+    },
+    {
+      "front": "una",
+      "back": "a (fem)"
+    },
+    {
+      "front": "un",
+      "back": "a (masc)"
+    },
+    {
+      "front": "la",
+      "back": "the (fem)"
+    },
+    {
+      "front": "el",
+      "back": "the (masc)"
+    },
+    {
+      "front": "y",
+      "back": "and"
+    },
+    {
+      "front": "hola",
+      "back": "hello"
+    },
+    {
+      "front": "me llamo",
+      "back": "my name is"
+    },
+    {
+      "front": "estoy",
+      "back": "I am"
+    },
+    {
+      "front": "bien",
+      "back": "well / good"
+    },
+    {
+      "front": "muy",
+      "back": "very"
+    },
+    {
+      "front": "perro",
+      "back": "dog (m.)"
+    },
+    {
+      "front": "gato",
+      "back": "cat (m.)"
+    },
+    {
+      "front": "cerveza",
+      "back": "beer (f.)"
+    },
+    {
+      "front": "café",
+      "back": "coffee (m.)"
+    },
+    {
+      "front": "te",
+      "back": "you (obj)"
+    },
+    {
+      "front": "te gusta",
+      "back": "do you like?"
+    },
+    {
+      "front": "bebo",
+      "back": "I drink"
+    },
+    {
+      "front": "como",
+      "back": "I eat"
+    },
+    {
+      "front": "pan",
+      "back": "bread (m.)"
+    },
+    {
+      "front": "manzana",
+      "back": "apple (f.)"
+    },
+    {
+      "front": "por favor",
+      "back": "please"
+    },
+    {
+      "front": "gracias",
+      "back": "thanks / thank you"
+    },
+    {
+      "front": "agua",
+      "back": "water (f.)"
+    },
+    {
+      "front": "puedo",
+      "back": "I can"
+    },
+    {
+      "front": "podés",
+      "back": "you can (vos)"
+    },
+    {
+      "front": "puede",
+      "back": "he/she can"
+    },
+    {
+      "front": "hablar",
+      "back": "to speak"
+    },
+    {
+      "front": "español",
+      "back": "Spanish (language)"
+    },
+    {
+      "front": "voy a",
+      "back": "I'm going to"
+    },
+    {
+      "front": "vas a",
+      "back": "you're going to (vos)"
+    },
+    {
+      "front": "tengo que",
+      "back": "I have to"
+    },
+    {
+      "front": "ir",
+      "back": "to go"
+    },
+    {
+      "front": "ser",
+      "back": "to be (permanent)"
+    },
+    {
+      "front": "estar",
+      "back": "to be (temporary)"
+    },
+    {
+      "front": "bueno/buena",
+      "back": "good (adj)"
+    },
+    {
+      "front": "bien",
+      "back": "well (adv)"
+    },
+    {
+      "front": "¿te gusta?",
+      "back": "do you like?"
+    },
+    {
+      "front": "bueno/a",
+      "back": "good (adj)"
+    },
+    {
+      "front": "amigo/a",
+      "back": "friend"
+    }
+  ]
+}
