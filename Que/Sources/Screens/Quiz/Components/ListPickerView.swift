@@ -9,6 +9,7 @@ struct ListPickerView: View {
     let selectedID: String
     let generationAvailable: Bool
     let onSelect: (WordList) -> Void
+    let onPreview: (WordList) -> Void
     let onEdit: (WordList) -> Void
     let onDelete: (WordList) -> Void
     let onCreate: (WordList.Kind) -> Void
@@ -72,6 +73,14 @@ struct ListPickerView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            
+            Button {
+                onPreview(list)
+            } label: {
+                Image(systemName: "eye").foregroundStyle(.white.opacity(0.7))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Preview \(list.name)")
 
             if editable {
                 Button { onEdit(list) } label: {
