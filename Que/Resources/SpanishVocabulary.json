@@ -18,7 +18,11 @@
     },
     {
       "front": "no",
-      "back": "not / no"
+      "back": "not"
+    },
+    {
+      "front": "no",
+      "back": "no"
     },
     {
       "front": "mi",
@@ -58,7 +62,11 @@
     },
     {
       "front": "bien",
-      "back": "well / good"
+      "back": "well"
+    },
+    {
+      "front": "bien",
+      "back": "good"
     },
     {
       "front": "muy",
@@ -110,7 +118,11 @@
     },
     {
       "front": "gracias",
-      "back": "thanks / thank you"
+      "back": "thanks"
+    },
+    {
+      "front": "gracias",
+      "back": "thank you"
     },
     {
       "front": "agua",
@@ -161,7 +173,11 @@
       "back": "to be (temporary)"
     },
     {
-      "front": "bueno/buena",
+      "front": "bueno",
+      "back": "good (adj)"
+    },
+    {
+      "front": "buena",
       "back": "good (adj)"
     },
     {
@@ -171,6 +187,14 @@
     {
       "front": "¿te gusta?",
       "back": "do you like?"
+    },
+    {
+      "front": "amigo",
+      "back": "friend"
+    },
+    {
+      "front": "amiga",
+      "back": "friend"
     },
     {
       "front": "bueno/a",
