@@ -469,7 +469,7 @@ final class QuizViewModel: ObservableObject {
                now().timeIntervalSince(answerShownAt) >= autoAdvanceDelay {
                 commitGrade(correct: result)
             }
-        case .menu, .listPicker, .listEditor, .generating, .nameEntry, .results, .leaderboard:
+        case .menu, .listPicker, .listEditor, .generating, .nameEntry, .results, .leaderboard, .listPreview:
             break
         }
     }
