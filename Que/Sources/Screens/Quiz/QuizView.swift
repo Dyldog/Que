@@ -47,11 +47,21 @@ struct QuizView: View {
                 selectedID: viewModel.selectedList.id,
                 generationAvailable: viewModel.generationAvailable,
                 onSelect: viewModel.selectList,
+                onPreview: viewModel.previewList,
                 onEdit: viewModel.editList,
                 onDelete: viewModel.deleteList,
                 onCreate: viewModel.createList,
                 onBack: viewModel.backToMenu
             )
+
+        case .listPreview:
+            if let list = viewModel.selectedList as WordList? {
+                ListPreviewView(
+                    list: list,
+                    onStart: { viewModel.startSprint(target: $0, waitsEnabled: $1) },
+                    onBack: { viewModel.openListPicker() }
+                )
+            }
 
         case .listEditor:
             if let list = viewModel.editingList {

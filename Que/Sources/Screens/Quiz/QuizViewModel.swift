@@ -11,6 +11,8 @@ final class QuizViewModel: ObservableObject {
         case menu
         /// Choosing which list to play.
         case listPicker
+        /// Preview a list's words before playing.
+        case listPreview
         /// Building or editing a custom / prompt list.
         case listEditor
         /// Generating a prompt list's words at the start of a round.
@@ -143,6 +145,11 @@ final class QuizViewModel: ObservableObject {
     func selectList(_ list: WordList) {
         selectedList = list
         phase = .menu
+    }
+    
+    func previewList(_ list: WordList) {
+        selectedList = list
+        phase = .listPreview
     }
 
     func createList(kind: WordList.Kind) {
