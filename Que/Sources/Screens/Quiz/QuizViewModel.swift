@@ -47,7 +47,6 @@ final class QuizViewModel: ObservableObject {
 
     let bundledLists = BundledLists.all
     private let bundledJSONStore = BundledJSONWordListStore()
-    var bundledJSONLists: [WordList] { bundledJSONStore.userLists() }
 
     private var answeredCount = 0
     private var correctCount = 0
