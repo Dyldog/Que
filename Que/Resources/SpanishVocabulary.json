@@ -251,6 +251,10 @@
     {
       "front": "mañana",
       "back": "tomorrow"
+    },
+    {
+      "front": "cansado/a",
+      "back": "tired"
     }
   ]
 }
