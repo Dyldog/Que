@@ -247,6 +247,10 @@
     {
       "front": "hoy",
       "back": "today"
+    },
+    {
+      "front": "mañana",
+      "back": "tomorrow"
     }
   ]
 }
