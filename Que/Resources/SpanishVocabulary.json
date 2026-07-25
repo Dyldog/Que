@@ -239,6 +239,14 @@
     {
       "front": "laburo",
       "back": "work"
+    },
+    {
+      "front": "casa",
+      "back": "house / home"
+    },
+    {
+      "front": "hoy",
+      "back": "today"
     }
   ]
 }
