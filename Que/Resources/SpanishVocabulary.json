@@ -275,6 +275,10 @@
     {
       "front": "¿querés?",
       "back": "do you want?"
+    },
+    {
+      "front": "o",
+      "back": "or"
     }
   ]
 }
