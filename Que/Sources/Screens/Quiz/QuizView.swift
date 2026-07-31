@@ -1,3 +1,4 @@
+import QYayKit
 import SwiftUI
 
 /// The single screen of the app. Renders the current phase of the sprint over the
@@ -24,6 +25,7 @@ struct QuizView: View {
         .onChange(of: viewModel.waitEndedSignal) { _, _ in
             WaitEndFeedback.play()
         }
+        .qyayNotesOnShake(configuration: .init(appName: "Que"))
     }
 
     @ViewBuilder

@@ -41,6 +41,10 @@ Speech uses `SFSpeechRecognizer` (Spanish or English depending on the answer
 language) behind the [`SpeechRecognizing`](Que/Sources/Shared/Speech/SpeechRecognizing.swift)
 protocol, so the view model is tested with a fake recognizer.
 
+### Developer notes
+
+Shake the root screen to open developer notes. Notes are saved as `Que.txt` in the shared QYay iCloud Drive container; iCloud Drive must be enabled for saving to work.
+
 ### Leaderboards
 
 Scores are kept **separately for every configuration** — that's the list (or prompt)

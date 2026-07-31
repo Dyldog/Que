@@ -7,8 +7,13 @@ let sharedSettings: SettingsDictionary = [
     "CODE_SIGN_IDENTITY": "Apple Development",
 ]
 
+let qyayICloudContainer = "iCloud.com.qyay.QYay"
+
 let project = Project(
     name: "Que",
+    packages: [
+        .local(path: "../QYayKit"),
+    ],
     settings: .settings(base: sharedSettings),
     targets: [
         .target(
@@ -26,10 +31,23 @@ let project = Project(
                     "Que listens to your spoken answer so it can check it for you.",
                 "NSSpeechRecognitionUsageDescription":
                     "Que uses speech recognition to tell whether you said the right word.",
+                "NSUbiquitousContainers": [
+                    qyayICloudContainer: [
+                        "NSUbiquitousContainerName": "QYay",
+                        "NSUbiquitousContainerIsDocumentScopePublic": true,
+                    ],
+                ],
             ]),
             sources: ["Que/Sources/**"],
             resources: ["Que/Resources/**"],
-            dependencies: []
+            entitlements: .dictionary([
+                "com.apple.developer.icloud-container-identifiers": .array([.string(qyayICloudContainer)]),
+                "com.apple.developer.icloud-services": .array([.string("CloudDocuments")]),
+                "com.apple.developer.ubiquity-container-identifiers": .array([.string(qyayICloudContainer)]),
+            ]),
+            dependencies: [
+                .package(product: "QYayKit"),
+            ]
         ),
         .target(
             name: "QueTests",
