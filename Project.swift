@@ -1,8 +1,15 @@
 import ProjectDescription
 
+let sharedSettings: SettingsDictionary = [
+    "SWIFT_VERSION": "5.0",
+    "CODE_SIGN_STYLE": "Automatic",
+    "DEVELOPMENT_TEAM": "6CW3378X23",
+    "CODE_SIGN_IDENTITY": "Apple Development",
+]
+
 let project = Project(
     name: "Que",
-    settings: .settings(base: ["SWIFT_VERSION": "5.0"]),
+    settings: .settings(base: sharedSettings),
     targets: [
         .target(
             name: "Que",
