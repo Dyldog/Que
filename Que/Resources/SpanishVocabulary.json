@@ -271,6 +271,10 @@
     {
       "front": "no me gusta",
       "back": "I don't like"
+    },
+    {
+      "front": "¿querés?",
+      "back": "do you want?"
     }
   ]
 }
