@@ -267,6 +267,10 @@
     {
       "front": "necesito",
       "back": "I need"
+    },
+    {
+      "front": "no me gusta",
+      "back": "I don't like"
     }
   ]
 }
