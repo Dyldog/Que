@@ -283,6 +283,10 @@
     {
       "front": "¿me das?",
       "back": "could you give me?"
+    },
+    {
+      "front": "¿qué hacés?",
+      "back": "what are you doing?"
     }
   ]
 }
