@@ -255,6 +255,18 @@
     {
       "front": "cansado/a",
       "back": "tired"
+    },
+    {
+      "front": "ahora",
+      "back": "now"
+    },
+    {
+      "front": "trabajar",
+      "back": "to work"
+    },
+    {
+      "front": "necesito",
+      "back": "I need"
     }
   ]
 }
