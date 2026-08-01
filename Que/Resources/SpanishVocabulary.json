@@ -287,6 +287,10 @@
     {
       "front": "¿qué hacés?",
       "back": "what are you doing?"
+    },
+    {
+      "front": "entiendo",
+      "back": "I understand"
     }
   ]
 }
