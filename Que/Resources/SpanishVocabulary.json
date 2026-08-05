@@ -303,6 +303,10 @@
     {
       "front": "tengo hambre",
       "back": "I'm hungry"
+    },
+    {
+      "front": "quiero comer",
+      "back": "I want to eat"
     }
   ]
 }
