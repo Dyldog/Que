@@ -8,10 +8,12 @@ let sharedSettings: SettingsDictionary = [
 ]
 
 let qyayICloudContainer = "iCloud.com.qyay.QYay"
+let queKitICloudContainer = "iCloud.com.dylanelliott.QueKit"
 
 let project = Project(
     name: "Que",
     packages: [
+        .local(path: "../QueKit"),
         .local(path: "../QYayKit"),
     ],
     settings: .settings(base: sharedSettings),
@@ -36,16 +38,27 @@ let project = Project(
                         "NSUbiquitousContainerName": "QYay",
                         "NSUbiquitousContainerIsDocumentScopePublic": true,
                     ],
+                    queKitICloudContainer: [
+                        "NSUbiquitousContainerName": "QueKit",
+                        "NSUbiquitousContainerIsDocumentScopePublic": true,
+                    ],
                 ],
             ]),
             sources: ["Que/Sources/**"],
             resources: ["Que/Resources/**"],
             entitlements: .dictionary([
-                "com.apple.developer.icloud-container-identifiers": .array([.string(qyayICloudContainer)]),
+                "com.apple.developer.icloud-container-identifiers": .array([
+                    .string(qyayICloudContainer),
+                    .string(queKitICloudContainer),
+                ]),
                 "com.apple.developer.icloud-services": .array([.string("CloudDocuments")]),
-                "com.apple.developer.ubiquity-container-identifiers": .array([.string(qyayICloudContainer)]),
+                "com.apple.developer.ubiquity-container-identifiers": .array([
+                    .string(qyayICloudContainer),
+                    .string(queKitICloudContainer),
+                ]),
             ]),
             dependencies: [
+                .package(product: "QueKit"),
                 .package(product: "QYayKit"),
             ]
         ),

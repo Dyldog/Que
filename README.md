@@ -7,16 +7,20 @@ for your fastest time, then punch your three initials into the leaderboard.
 
 Choose a list from the menu's **LIST** selector:
 
-- **Bundled** lists compiled into the app (Interrogatives, Numbers, Colours, Days &
-  Months, Common Verbs) — see [`BundledLists`](Que/Sources/Models/BundledLists.swift).
+- **Bundled** lists supplied by QueKit (Interrogatives, Numbers, Colours, Days &
+  Months, Common Verbs, and Dylan’s larger Spanish vocabulary resources).
 - **Custom** lists you build in the app (name, both languages, and word pairs).
 - **Generated** lists, where the "list" is really a *prompt*: its words are generated
   on-device at the **start of each round** with Apple's Foundation Models
   (`@Generable`) and never saved. The prompt and its languages are saved so it stays
   selectable and keeps its own leaderboard. See
-  [`FoundationModelsWordListGenerator`](Que/Sources/Shared/Generation/FoundationModelsWordListGenerator.swift).
+  `FoundationModelsWordListGenerator` in QueKit.
 
-Custom and prompt lists persist via [`WordListStore`](Que/Sources/Shared/Persistence/WordListStore.swift).
+The shared [`QueKit`](../QueKit) package owns the models, built-in list resources,
+CRUD API, iCloud persistence, and AI generator. Custom and prompt lists are stored
+as JSON documents in `iCloud.com.dylanelliott.QueKit`, so every entitled host app
+sees the same collection. On first launch after this migration, Que imports its
+former `userWordLists.v1` UserDefaults data into iCloud.
 
 ## How it works
 
@@ -73,10 +77,11 @@ with glowing monospaced type, using the palette and helpers in `ArcadePalette`,
 ```
 Que/Sources/
   App/            App entry point
-  Models/         Word, WordBank, Language, Round, SprintConfig, SprintResult
-  Shared/         Timing, formatting, speech, and persistence (best time + leaderboard)
+  Models/         Quiz/session models; vocabulary models live in QueKit
+  Shared/         Timing, formatting, speech, and score persistence
   Screens/Quiz/   The single screen: QuizView, QuizViewModel, and its Components
 Que/Tests/        Unit tests
+../QueKit/        Shared vocabulary library, iCloud store, and AI generation
 ```
 
 ## Building & running

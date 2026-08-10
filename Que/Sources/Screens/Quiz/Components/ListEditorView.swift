@@ -1,3 +1,4 @@
+import QueKit
 import SwiftUI
 
 /// Builds or edits a user list — either a fixed set of words or a generation prompt.

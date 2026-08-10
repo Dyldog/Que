@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import QueKit
 
 /// Drives a sprint over a chosen word list: a state machine over the phases of a
 /// round plus the stopwatch, the optional adaptive wait, the fastest-word record,
@@ -31,7 +32,6 @@ final class QuizViewModel: ObservableObject {
     @Published private(set) var config = SprintConfig(listID: "", target: 10, waitsEnabled: true)
     @Published private(set) var selectedList: WordList
     @Published private(set) var userLists: [WordList] = []
-    @Published private(set) var bundledJSONLists: [WordList] = []
     @Published var editingList: WordList?
     @Published private(set) var generationError: String?
 
@@ -47,8 +47,8 @@ final class QuizViewModel: ObservableObject {
     @Published private(set) var transcript = ""
     @Published private(set) var spokenResult: Bool?
 
-    let bundledLists = BundledLists.all
-    private let bundledJSONStore = BundledJSONWordListStore()
+    let bundledLists = QueListLibrary.builtInLists
+    let bundledJSONLists = QueListLibrary.personalBundledLists
 
     private var answeredCount = 0
     private var correctCount = 0
@@ -83,7 +83,7 @@ final class QuizViewModel: ObservableObject {
         now: @escaping () -> Date = Date.init,
         bestTimes: BestTimeStore = UserDefaultsBestTimeStore(),
         leaderboard: LeaderboardStore = UserDefaultsLeaderboardStore(),
-        wordLists: WordListStore = UserDefaultsWordListStore(),
+        wordLists: WordListStore = ICloudWordListStore(),
         generator: WordListGenerating = FoundationModelsWordListGenerator(),
         speech: SpeechRecognizing = SpeechRecognizer()
     ) {
@@ -96,14 +96,16 @@ final class QuizViewModel: ObservableObject {
         self.generator = generator
         self.speech = speech
         self.fastestWordTime = bestTimes.fastestWordTime
-        self.selectedList = BundledLists.all[0]
-        self.userLists = wordLists.userLists()
-        self.bundledJSONLists = loadBundledJSONLists()
-    }
-    
-    private func loadBundledJSONLists() -> [WordList] {
-        let store = BundledJSONWordListStore()
-        return store.userLists()
+        self.selectedList = QueListLibrary.builtInLists[0]
+
+        do {
+            if wordLists is ICloudWordListStore {
+                try UserDefaultsWordListMigrator.migrateIfNeeded(to: wordLists)
+            }
+            self.userLists = try wordLists.userLists()
+        } catch {
+            generationError = error.localizedDescription
+        }
     }
 
     /// Resolves microphone/speech permission once, before playing.
@@ -139,6 +141,7 @@ final class QuizViewModel: ObservableObject {
 
     func openListPicker() {
         generationError = nil
+        reloadUserLists()
         phase = .listPicker
     }
 
@@ -170,21 +173,37 @@ final class QuizViewModel: ObservableObject {
     }
 
     func saveList(_ list: WordList) {
-        wordLists.save(list)
-        userLists = wordLists.userLists()
-        selectedList = list
-        editingList = nil
-        phase = .listPicker
+        do {
+            try wordLists.save(list)
+            userLists = try wordLists.userLists()
+            selectedList = list
+            editingList = nil
+            phase = .listPicker
+        } catch {
+            generationError = error.localizedDescription
+        }
     }
 
     func deleteList(_ list: WordList) {
-        wordLists.delete(id: list.id)
-        userLists = wordLists.userLists()
-        if selectedList.id == list.id {
-            selectedList = bundledLists[0]
+        do {
+            try wordLists.delete(id: list.id)
+            userLists = try wordLists.userLists()
+            if selectedList.id == list.id {
+                selectedList = bundledLists[0]
+            }
+            editingList = nil
+            phase = .listPicker
+        } catch {
+            generationError = error.localizedDescription
         }
-        editingList = nil
-        phase = .listPicker
+    }
+
+    private func reloadUserLists() {
+        do {
+            userLists = try wordLists.userLists()
+        } catch {
+            generationError = error.localizedDescription
+        }
     }
 
     func cancelEditing() {

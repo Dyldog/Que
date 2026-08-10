@@ -1,4 +1,5 @@
 import Foundation
+import QueKit
 
 /// A single prompt: a word shown on one side, to be translated to the other.
 struct Round: Equatable {

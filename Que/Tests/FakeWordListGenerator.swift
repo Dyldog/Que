@@ -1,4 +1,5 @@
 import Foundation
+import QueKit
 @testable import Que
 
 /// A controllable `WordListGenerating` for tests.
