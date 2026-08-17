@@ -1,0 +1,312 @@
+{
+  "name": "Dylan's Spanish Vocabulary (A1 Rioplatense)",
+  "kind": "custom",
+  "front": "Spanish",
+  "back": "English",
+  "words": [
+    {
+      "front": "quiero",
+      "back": "I want"
+    },
+    {
+      "front": "tengo",
+      "back": "I have"
+    },
+    {
+      "front": "me gusta",
+      "back": "I like"
+    },
+    {
+      "front": "no",
+      "back": "not"
+    },
+    {
+      "front": "no",
+      "back": "no"
+    },
+    {
+      "front": "mi",
+      "back": "my"
+    },
+    {
+      "front": "una",
+      "back": "a (fem)"
+    },
+    {
+      "front": "un",
+      "back": "a (masc)"
+    },
+    {
+      "front": "la",
+      "back": "the (fem)"
+    },
+    {
+      "front": "el",
+      "back": "the (masc)"
+    },
+    {
+      "front": "y",
+      "back": "and"
+    },
+    {
+      "front": "hola",
+      "back": "hello"
+    },
+    {
+      "front": "me llamo",
+      "back": "my name is"
+    },
+    {
+      "front": "estoy",
+      "back": "I am"
+    },
+    {
+      "front": "bien",
+      "back": "well"
+    },
+    {
+      "front": "bien",
+      "back": "good"
+    },
+    {
+      "front": "muy",
+      "back": "very"
+    },
+    {
+      "front": "perro",
+      "back": "dog (m.)"
+    },
+    {
+      "front": "gato",
+      "back": "cat (m.)"
+    },
+    {
+      "front": "cerveza",
+      "back": "beer (f.)"
+    },
+    {
+      "front": "café",
+      "back": "coffee (m.)"
+    },
+    {
+      "front": "te",
+      "back": "you (obj)"
+    },
+    {
+      "front": "te gusta",
+      "back": "do you like?"
+    },
+    {
+      "front": "bebo",
+      "back": "I drink"
+    },
+    {
+      "front": "como",
+      "back": "I eat"
+    },
+    {
+      "front": "pan",
+      "back": "bread (m.)"
+    },
+    {
+      "front": "manzana",
+      "back": "apple (f.)"
+    },
+    {
+      "front": "por favor",
+      "back": "please"
+    },
+    {
+      "front": "gracias",
+      "back": "thanks"
+    },
+    {
+      "front": "gracias",
+      "back": "thank you"
+    },
+    {
+      "front": "agua",
+      "back": "water (f.)"
+    },
+    {
+      "front": "puedo",
+      "back": "I can"
+    },
+    {
+      "front": "podés",
+      "back": "you can (vos)"
+    },
+    {
+      "front": "puede",
+      "back": "he/she can"
+    },
+    {
+      "front": "hablar",
+      "back": "to speak"
+    },
+    {
+      "front": "español",
+      "back": "Spanish (language)"
+    },
+    {
+      "front": "voy a",
+      "back": "I'm going to"
+    },
+    {
+      "front": "vas a",
+      "back": "you're going to (vos)"
+    },
+    {
+      "front": "tengo que",
+      "back": "I have to"
+    },
+    {
+      "front": "ir",
+      "back": "to go"
+    },
+    {
+      "front": "ser",
+      "back": "to be (permanent)"
+    },
+    {
+      "front": "estar",
+      "back": "to be (temporary)"
+    },
+    {
+      "front": "bueno",
+      "back": "good (adj)"
+    },
+    {
+      "front": "buena",
+      "back": "good (adj)"
+    },
+    {
+      "front": "bien",
+      "back": "well (adv)"
+    },
+    {
+      "front": "¿te gusta?",
+      "back": "do you like?"
+    },
+    {
+      "front": "amigo",
+      "back": "friend"
+    },
+    {
+      "front": "amiga",
+      "back": "friend"
+    },
+    {
+      "front": "bueno/a",
+      "back": "good (adj)"
+    },
+    {
+      "front": "amigo/a",
+      "back": "friend"
+    },
+    {
+      "front": "no tengo",
+      "back": "I don't have"
+    },
+    {
+      "front": "vino",
+      "back": "wine"
+    },
+    {
+      "front": "hablo",
+      "back": "I speak"
+    },
+    {
+      "front": "soy",
+      "back": "I am (identity)"
+    },
+    {
+      "front": "australiano",
+      "back": "Australian"
+    },
+    {
+      "front": "Argentina",
+      "back": "Argentina"
+    },
+    {
+      "front": "mate",
+      "back": "mate (tea)"
+    },
+    {
+      "front": "celular",
+      "back": "phone"
+    },
+    {
+      "front": "laburo",
+      "back": "work"
+    },
+    {
+      "front": "casa",
+      "back": "house / home"
+    },
+    {
+      "front": "hoy",
+      "back": "today"
+    },
+    {
+      "front": "mañana",
+      "back": "tomorrow"
+    },
+    {
+      "front": "cansado/a",
+      "back": "tired"
+    },
+    {
+      "front": "ahora",
+      "back": "now"
+    },
+    {
+      "front": "trabajar",
+      "back": "to work"
+    },
+    {
+      "front": "necesito",
+      "back": "I need"
+    },
+    {
+      "front": "no me gusta",
+      "back": "I don't like"
+    },
+    {
+      "front": "¿querés?",
+      "back": "do you want?"
+    },
+    {
+      "front": "o",
+      "back": "or"
+    },
+    {
+      "front": "¿me das?",
+      "back": "could you give me?"
+    },
+    {
+      "front": "¿qué hacés?",
+      "back": "what are you doing?"
+    },
+    {
+      "front": "entiendo",
+      "back": "I understand"
+    },
+    {
+      "front": "queso",
+      "back": "cheese"
+    },
+    {
+      "front": "queso cremoso",
+      "back": "creamy cheese"
+    },
+    {
+      "front": "tengo hambre",
+      "back": "I'm hungry"
+    },
+    {
+      "front": "quiero comer",
+      "back": "I want to eat"
+    }
+  ]
+}
