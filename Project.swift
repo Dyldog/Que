@@ -13,7 +13,7 @@ let queKitICloudContainer = "iCloud.com.dylanelliott.QueKit"
 let project = Project(
     name: "Que",
     packages: [
-        .local(path: "../QueKit"),
+        .local(path: "QueKit"),
         .local(path: "../QYayKit"),
     ],
     settings: .settings(base: sharedSettings),

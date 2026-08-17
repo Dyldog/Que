@@ -16,7 +16,7 @@ Choose a list from the menu's **LIST** selector:
   selectable and keeps its own leaderboard. See
   `FoundationModelsWordListGenerator` in QueKit.
 
-The shared [`QueKit`](../QueKit) package owns the models, built-in list resources,
+The nested [`QueKit`](QueKit) package owns the models, built-in list resources,
 CRUD API, iCloud persistence, and AI generator. Custom and prompt lists are stored
 as JSON documents in `iCloud.com.dylanelliott.QueKit`, so every entitled host app
 sees the same collection. On first launch after this migration, Que imports its
@@ -81,7 +81,7 @@ Que/Sources/
   Shared/         Timing, formatting, speech, and score persistence
   Screens/Quiz/   The single screen: QuizView, QuizViewModel, and its Components
 Que/Tests/        Unit tests
-../QueKit/        Shared vocabulary library, iCloud store, and AI generation
+QueKit/           Shared vocabulary library, iCloud store, and AI generation
 ```
 
 ## Building & running
