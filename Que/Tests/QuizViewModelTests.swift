@@ -31,6 +31,7 @@ struct QuizViewModelTests {
         leaderboard: LeaderboardStore = InMemoryLeaderboardStore(),
         wordLists: WordListStore = InMemoryWordListStore(),
         generator: WordListGenerating = FakeWordListGenerator(),
+        knowledge: KnownVocabularyStore? = nil,
         list: WordList? = nil
     ) -> QuizViewModel {
         let viewModel = QuizViewModel(
@@ -40,6 +41,9 @@ struct QuizViewModelTests {
             leaderboard: leaderboard,
             wordLists: wordLists,
             generator: generator,
+            knowledge: knowledge ?? ICloudKnownVocabularyStore(
+                rootURL: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            ),
             speech: FakeSpeechRecognizer()
         )
         viewModel.selectList(list ?? fixedList())
@@ -84,6 +88,21 @@ struct QuizViewModelTests {
         answer(viewModel, clock: clock, recall: 8, correct: true)
         #expect(viewModel.fastestWordTime == 2)
         #expect(store.fastestWordTime == 2)
+    }
+
+    @Test
+    func correctAnswerIsAddedToSharedKnownVocabulary() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let knowledge = ICloudKnownVocabularyStore(rootURL: root)
+        let clock = TestClock()
+        let viewModel = makeViewModel(clock: clock, knowledge: knowledge)
+
+        viewModel.startSprint(target: 2, waitsEnabled: false)
+        answer(viewModel, clock: clock, recall: 2, correct: true)
+
+        #expect(try knowledge.knownWords().count == 1)
+        #expect(try knowledge.knownWords().first?.correctCount == 1)
     }
 
     // MARK: - Sprint completion + leaderboard

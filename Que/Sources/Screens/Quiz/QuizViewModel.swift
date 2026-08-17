@@ -74,6 +74,7 @@ final class QuizViewModel: ObservableObject {
     private let leaderboard: LeaderboardStore
     private let wordLists: WordListStore
     private let generator: WordListGenerating
+    private let knowledge: KnownVocabularyStore
     private let speech: SpeechRecognizing
     private var timerCancellable: AnyCancellable?
 
@@ -85,6 +86,7 @@ final class QuizViewModel: ObservableObject {
         leaderboard: LeaderboardStore = UserDefaultsLeaderboardStore(),
         wordLists: WordListStore = ICloudWordListStore(),
         generator: WordListGenerating = FoundationModelsWordListGenerator(),
+        knowledge: KnownVocabularyStore = ICloudKnownVocabularyStore(),
         speech: SpeechRecognizing = SpeechRecognizer()
     ) {
         self.tickInterval = tickInterval
@@ -94,6 +96,7 @@ final class QuizViewModel: ObservableObject {
         self.leaderboard = leaderboard
         self.wordLists = wordLists
         self.generator = generator
+        self.knowledge = knowledge
         self.speech = speech
         self.fastestWordTime = bestTimes.fastestWordTime
         self.selectedList = QueListLibrary.builtInLists[0]
@@ -400,7 +403,16 @@ final class QuizViewModel: ObservableObject {
 
     private func commitGrade(correct: Bool) {
         answeredCount += 1
-        if correct { correctCount += 1 }
+        if correct {
+            correctCount += 1
+            if let round {
+                try? knowledge.recordCorrect(
+                    word: round.word,
+                    frontLanguage: round.frontLanguage,
+                    backLanguage: round.backLanguage
+                )
+            }
+        }
 
         let total = WaitTimeCalculator.totalTime(previousWait: waitTime, answerTime: answerTime)
         waitTime = WaitTimeCalculator.nextWaitTime(correct: correct, currentWait: waitTime, totalTime: total)

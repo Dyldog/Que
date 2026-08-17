@@ -20,7 +20,7 @@ The shared [`QueKit`](../QueKit) package owns the models, built-in list resource
 CRUD API, iCloud persistence, and AI generator. Custom and prompt lists are stored
 as JSON documents in `iCloud.com.dylanelliott.QueKit`, so every entitled host app
 sees the same collection. On first launch after this migration, Que imports its
-former `userWordLists.v1` UserDefaults data into iCloud.
+former `userWordLists.v1` UserDefaults data into iCloud. Every word graded correct is also merged into QueKit's shared known-vocabulary history, allowing apps such as Rumbo to distinguish a focus list from vocabulary the learner has actually demonstrated.
 
 ## How it works
 
