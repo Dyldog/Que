@@ -287,6 +287,26 @@
     {
       "front": "¿qué hacés?",
       "back": "what are you doing?"
+    },
+    {
+      "front": "entiendo",
+      "back": "I understand"
+    },
+    {
+      "front": "queso",
+      "back": "cheese"
+    },
+    {
+      "front": "queso cremoso",
+      "back": "creamy cheese"
+    },
+    {
+      "front": "tengo hambre",
+      "back": "I'm hungry"
+    },
+    {
+      "front": "quiero comer",
+      "back": "I want to eat"
     }
   ]
 }

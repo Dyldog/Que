@@ -303,6 +303,26 @@
     {
       "front": "hacen",
       "back": "hacer — they/you-all do/make"
+    },
+    {
+      "front": "entiendo",
+      "back": "entender — I understand"
+    },
+    {
+      "front": "entendés",
+      "back": "entender — you understand (vos, Argentina)"
+    },
+    {
+      "front": "entiende",
+      "back": "entender — he/she/you-formal understands"
+    },
+    {
+      "front": "entendemos",
+      "back": "entender — we understand"
+    },
+    {
+      "front": "entienden",
+      "back": "entender — they/you-all understand"
     }
   ]
 }
