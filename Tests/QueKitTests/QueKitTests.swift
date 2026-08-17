@@ -37,6 +37,23 @@ struct QueKitTests {
     }
 
     @Test
+    func knownVocabularyRecordsCorrectAnswersAcrossAttempts() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = ICloudKnownVocabularyStore(rootURL: root)
+        let word = Word(front: "hola", back: "hello")
+
+        try store.recordCorrect(word: word, frontLanguage: .spanish, backLanguage: .english)
+        try store.recordCorrect(word: word, frontLanguage: .spanish, backLanguage: .english)
+
+        let record = try #require(store.knownWords().first)
+        #expect(record.spanish == "hola")
+        #expect(record.english == "hello")
+        #expect(record.correctCount == 2)
+    }
+
+    @Test
     func legacyUserDefaultsMigrationOnlyRunsOnce() throws {
         let suiteName = UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suiteName))
